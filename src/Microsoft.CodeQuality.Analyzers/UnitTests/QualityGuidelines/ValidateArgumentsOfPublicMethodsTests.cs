@@ -3244,7 +3244,7 @@ public class Test
 ");
         }
 
-        [Fact]
+        [Fact(Skip = "https://github.com/dotnet/roslyn-analyzers/issues/1852")]
         public void Issue1852()
         {
             VerifyCSharp(@"
@@ -3269,6 +3269,114 @@ namespace Blah
         private object DoDeserialization(Des des, Stream stream)
         {
             return des(stream);
+        }
+    }
+}");
+        }
+
+        [Fact(Skip = "https://github.com/dotnet/roslyn-analyzers/issues/1856")]
+        public void PointsToDataFlowOperationVisitor_VisitInstanceReference_Assert()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Xml.Linq;
+
+namespace Blah
+{
+    public class ContentContext
+    {
+        public XElement Data { get; set; }
+
+        public XElement Element(string elementName)
+        {
+            var element = Data.Element(elementName);
+            if (element == null)
+            {
+                element = new XElement(elementName);
+                Data.Add(element);
+            }
+            return element;
+        }
+    }
+
+    public interface IDef
+    {
+        string Name { get; }
+    }
+
+    public interface IContent
+    {
+        T As<T>();
+        IDef Definition { get; }
+    }
+
+    public class Container
+    {
+        private XElement _element;
+
+        private void SetElement(XElement value)
+        {
+            _element = value;
+        }
+
+        public XElement Element
+        {
+            get
+            {
+                return _element ?? (_element = new XElement(""Data""));
+            }
+        }
+
+        public string Data
+        {
+            get
+            {
+                return _element == null ? null : Element.ToString(SaveOptions.DisableFormatting);
+            }
+            set
+            {
+                SetElement(string.IsNullOrEmpty(value) ? null : XElement.Parse(value, LoadOptions.PreserveWhitespace));
+            }
+        }
+    }
+
+    public class ContainerPart
+    {
+        public Container Container;
+        public Container VersionContainer;
+    }
+
+    public abstract class Idk<TContent> where TContent : IContent, new()
+    {
+        public static void ExportInfo(TContent part, ContentContext context)
+        {
+            var containerPart = part.As<ContainerPart>();
+
+            if (containerPart == null)
+            {
+                return;
+            }
+
+            Action<XElement, bool> exportInfo = (element, versioned) => {
+                if (element == null)
+                {
+                    return;
+                }
+
+                var elementName = GetContainerXmlElementName(part, versioned);
+                foreach (var attribute in element.Attributes())
+                {
+                    context.Element(elementName).SetAttributeValue(attribute.Name, attribute.Value);
+                }
+            };
+
+            exportInfo(containerPart.VersionContainer.Element.Element(part.Definition.Name), true);
+            exportInfo(containerPart.Container.Element.Element(part.Definition.Name), false);
+        }
+
+        private static string GetContainerXmlElementName(TContent part, bool versioned)
+        {
+            return part.Definition.Name + ""-"" + (versioned ? ""VersionInfoset"" : ""Infoset"");
         }
     }
 }");
