@@ -1,0 +1,65 @@
+﻿// This configures deserialization rules:
+// - CA2300: Do not use insecure deserializer
+//           (triggered when invoking or referencing a deserialization method)
+// - CA2301: Do not deserialize without SerializationBinder
+//           (triggered when a SerializationBinder is definitely not set)
+// - CA2302: Ensure a SerializationBinder is set before deserializing
+//           (triggered when a SerializationBinder is possibly not set)
+//
+// The deserializer configurations (objects in the top level
+// "deserializerConfigs" dictionary) are:
+// - Keyed by the full name (namespace + type) of the deserializer class.
+// - Array of strings, "deserializationMethodNames", to specify the names
+//   of the deserialization methods.
+// - Optional "disallowDeserializationChecks" object, to configure CA2300:
+//   -- "enabled" boolean, to enable or disable the checks.
+//   -- Optional "additionalMessageText" string, which will be appended to
+//      any CA2300 diagnostic message text.  Useful if you want to add
+//      additional documentation specific to the deserializer.
+// - Optional "disallowDeserializationChecks" object, to configure CA2301 and
+//   CA2302:
+//   -- "enabled" boolean, to enable or disable the checks.
+//   -- "serializationBinderPropertyName" string to specify name of the
+//      SerializationBinder property in the deserializer class.
+//   -- Optional "additionalMessageText" string, which will be appended to
+//      any CA2301 and CA2302 diagnostic message text.  Useful if you want to
+//      add additional documentation specific to the deserializer.
+//
+// Notes:
+// - Identifiers (type names, method names, property names) are case
+//   sensitive.
+// - The "additionalMessageText" strings will not be localized, but will
+//   appear in a localized diagnostic message.
+
+{
+  "deserializerConfigs": {
+
+    "System.Runtime.Serialization.Formatters.Binary.BinaryFormatter": {
+      "deserializationMethodNames": [
+        "Deserialize",
+        "DeserializeMethodResponse",
+        "UnsafeDeserialize",
+        "UnsafeDeserializeMethodResponse"
+      ],
+      "disallowDeserializationChecks": {
+        "enabled": true,
+        "additionalMessageText": null
+      },
+      "requireSerializationBinderChecks": {
+        "enabled": true,
+        "serializationBinderPropertyName": "Binder",
+        "additionalMessageText": null
+      }
+    },
+
+    "System.Web.UI.LosFormatter": {
+      "deserializationMethodNames": [
+        "Deserialize"
+      ],
+      "disallowDeserializationChecks": {
+        "enabled": true,
+        "additionalMessageText": null
+      }
+    }
+  }
+}
