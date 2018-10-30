@@ -3273,5 +3273,59 @@ namespace Blah
     }
 }");
         }
+
+        [Fact]
+        public void Issue1870()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Runtime.CompilerServices;
+using System.Reflection;
+
+namespace ANamespace {
+    public interface IInterface {
+    }
+
+    public class PropConvert {
+        public static IInterface ToSettings(object o) {
+            if (IsATypeOfSomeSort(o.GetType())) {
+                dynamic b = new PropBag();
+
+                foreach (var p in o.GetType().GetProperties()) {
+                    b[p.Name] = p.GetValue(o, null);
+                }
+
+                return b;
+            }
+
+            return null;
+        }
+
+        private static bool IsATypeOfSomeSort(Type type) {
+            return type.IsGenericType
+                && Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false);
+        }
+    }
+
+    public class PropBag : DynamicObject, IInterface {
+        internal readonly Dictionary<string, IInterface> _properties = new Dictionary<string, IInterface>();
+
+        public static dynamic New() {
+            return new PropBag();
+        }
+
+        public void SetMember(string name, object value) {
+            if (value == null && _properties.ContainsKey(name)) {
+                _properties.Remove(name);
+            }
+            else {
+                _properties[name] = PropConvert.ToSettings(value);
+            }
+        }
+    }
+}");
+        }
     }
 }
