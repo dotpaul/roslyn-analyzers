@@ -3327,5 +3327,31 @@ namespace ANamespace {
     }
 }");
         }
+
+        [Fact]
+        public void Issue1870_2()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Collections.Generic;
+
+namespace ANamespace
+{
+    public static class SomeExtensions
+    {
+        public static Dictionary<string, string> Merge(this Dictionary<string, string> dictionary, Dictionary<string, string> dictionaryToMerge) {
+            if (dictionaryToMerge == null)
+                return dictionary;
+
+            var newDictionary = new Dictionary<string, string>(dictionary);
+
+            foreach (var valueDictionary in dictionaryToMerge)
+                newDictionary[valueDictionary.Key] = valueDictionary.Value;
+
+            return newDictionary;
+        }
+    }
+}");
+        }
     }
 }
