@@ -9,9 +9,9 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private const string CA3075RuleId = DoNotUseInsecureDtdProcessingAnalyzer.RuleId;
+        protected const string CA3075RuleId = DoNotUseInsecureDtdProcessingAnalyzer.RuleId;
 
-        private readonly string _CA3075LoadXmlMessage = MicrosoftNetFrameworkAnalyzersResources.DoNotUseDtdProcessingOverloadsMessage;
+        protected readonly string _CA3075LoadXmlMessage = MicrosoftNetFrameworkAnalyzersResources.DoNotUseDtdProcessingOverloadsMessage;
 
         protected override DiagnosticAnalyzer GetBasicDiagnosticAnalyzer()
         {
@@ -23,12 +23,12 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
             return new DoNotUseInsecureDtdProcessingAnalyzer();
         }
 
-        private DiagnosticResult GetCA3075LoadXmlCSharpResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075LoadXmlCSharpResultAt(int line, int column)
         {
             return GetCSharpResultAt(line, column, CA3075RuleId, string.Format(_CA3075LoadXmlMessage, "LoadXml"));
         }
 
-        private DiagnosticResult GetCA3075LoadXmlBasicResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075LoadXmlBasicResultAt(int line, int column)
         {
             return GetBasicResultAt(line, column, CA3075RuleId, string.Format(_CA3075LoadXmlMessage, "LoadXml"));
         }

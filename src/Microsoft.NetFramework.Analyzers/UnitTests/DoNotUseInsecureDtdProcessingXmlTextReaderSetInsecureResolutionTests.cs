@@ -6,16 +6,17 @@ using Xunit;
 
 namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
+    // This 
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private static readonly string s_CA3075XmlTextReaderSetInsecureResolutionMessage = MicrosoftNetFrameworkAnalyzersResources.XmlTextReaderSetInsecureResolutionMessage;
+        protected static readonly string s_CA3075XmlTextReaderSetInsecureResolutionMessage = MicrosoftNetFrameworkAnalyzersResources.XmlTextReaderSetInsecureResolutionMessage;
 
-        private DiagnosticResult GetCA3075XmlTextReaderSetInsecureResolutionCSharpResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075XmlTextReaderSetInsecureResolutionCSharpResultAt(int line, int column)
         {
             return GetCSharpResultAt(line, column, CA3075RuleId, s_CA3075XmlTextReaderSetInsecureResolutionMessage);
         }
 
-        private DiagnosticResult GetCA3075XmlTextReaderSetInsecureResolutionBasicResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075XmlTextReaderSetInsecureResolutionBasicResultAt(int line, int column)
         {
             return GetBasicResultAt(line, column, CA3075RuleId, s_CA3075XmlTextReaderSetInsecureResolutionMessage);
         }

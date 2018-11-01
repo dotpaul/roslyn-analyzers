@@ -44,6 +44,21 @@ namespace Microsoft.NetFramework.Analyzers
             );
         }
 
+        /// <summary>
+        /// To unit test earlier versions of .NET Framework.
+        /// </summary>
+        /// <remarks>See <see cref="SecurityDiagnosticHelpers.GetDotNetFrameworkVersion(Compilation)"/>.</remarks>
+        internal Version UnitTestNetFrameworkVersion
+        {
+            set
+            {
+                _unitTestNetFrameworkVersion = value;
+                _useUnitTestNetFrameworkVersion = true;
+            }
+        }
+
+        private Version _unitTestNetFrameworkVersion;
+        private bool _useUnitTestNetFrameworkVersion;
 
         public override void Initialize(AnalysisContext analysisContext)
         {
@@ -62,6 +77,10 @@ namespace Microsoft.NetFramework.Analyzers
                     if (ReferencesAnyTargetType(xmlTypes))
                     {
                         Version version = SecurityDiagnosticHelpers.GetDotNetFrameworkVersion(compilation);
+                        if (_useUnitTestNetFrameworkVersion)
+                        {
+                            version = _unitTestNetFrameworkVersion;
+                        }
 
                         if (version != null)
                         {

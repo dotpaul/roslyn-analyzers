@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Microsoft.NetFramework.Analyzers.Helpers
 {
-    public static class SecurityDiagnosticHelpers
+    internal static class SecurityDiagnosticHelpers
     {
         public static bool IsXslCompiledTransformLoad(IMethodSymbol method, CompilationSecurityTypes xmlTypes)
         {
@@ -291,16 +291,19 @@ namespace Microsoft.NetFramework.Analyzers.Helpers
             {
                 return new Version(4, 6);
             }
+
             INamedTypeSymbol typeSymbol = mscorlibAssembly.GetTypeByMetadataName("System.IO.UnmanagedMemoryStream");
             if (!typeSymbol.GetMembers("FlushAsync").IsEmpty)
             {
                 return new Version(4, 5, 2);
             }
+
             typeSymbol = mscorlibAssembly.GetTypeByMetadataName("System.Diagnostics.Tracing.EventSource");
             if (typeSymbol != null)
             {
                 return typeSymbol.GetMembers("CurrentThreadActivityId").IsEmpty ? new Version(4, 5) : new Version(4, 5, 1);
             }
+
             return new Version(4, 0);
         }
 

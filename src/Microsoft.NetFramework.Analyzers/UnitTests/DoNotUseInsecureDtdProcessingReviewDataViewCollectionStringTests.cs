@@ -8,14 +8,14 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private readonly string _CA3075DataViewConnectionStringMessage = MicrosoftNetFrameworkAnalyzersResources.ReviewDtdProcessingPropertiesMessage;
+        protected readonly string _CA3075DataViewConnectionStringMessage = MicrosoftNetFrameworkAnalyzersResources.ReviewDtdProcessingPropertiesMessage;
 
-        private DiagnosticResult GetCA3075DataViewCSharpResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075DataViewCSharpResultAt(int line, int column)
         {
             return GetCSharpResultAt(line, column, CA3075RuleId, _CA3075DataViewConnectionStringMessage);
         }
 
-        private DiagnosticResult GetCA3075DataViewBasicResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075DataViewBasicResultAt(int line, int column)
         {
             return GetBasicResultAt(line, column, CA3075RuleId, _CA3075DataViewConnectionStringMessage);
         }

@@ -8,14 +8,14 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private static readonly string s_CA3075XmlTextReaderConstructedWithNoSecureResolutionMessage = MicrosoftNetFrameworkAnalyzersResources.XmlTextReaderConstructedWithNoSecureResolutionMessage;
+        protected static readonly string s_CA3075XmlTextReaderConstructedWithNoSecureResolutionMessage = MicrosoftNetFrameworkAnalyzersResources.XmlTextReaderConstructedWithNoSecureResolutionMessage;
 
-        private DiagnosticResult GetCA3075XmlTextReaderConstructedWithNoSecureResolutionCSharpResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075XmlTextReaderConstructedWithNoSecureResolutionCSharpResultAt(int line, int column)
         {
             return GetCSharpResultAt(line, column, CA3075RuleId, s_CA3075XmlTextReaderConstructedWithNoSecureResolutionMessage);
         }
 
-        private DiagnosticResult GetCA3075XmlTextReaderConstructedWithNoSecureResolutionBasicResultAt(int line, int column)
+        protected DiagnosticResult GetCA3075XmlTextReaderConstructedWithNoSecureResolutionBasicResultAt(int line, int column)
         {
             return GetBasicResultAt(line, column, CA3075RuleId, s_CA3075XmlTextReaderConstructedWithNoSecureResolutionMessage);
         }
@@ -1280,6 +1280,7 @@ End Namespace",
         }
 
         [Fact]
+        // This does work, but not because of the TargetFrameworkAttribute.
         public void ConstructXmlTextReaderOnlySetDtdProcessingProhibitTargetFx46ShouldNotGenerateDiagnostic()
         {
             VerifyCSharp(@"
@@ -1320,6 +1321,7 @@ End Namespace");
         }
 
         [Fact]
+        // This doesn't work, GetDotNetFrameworkVersion is still v4.6.
         public void ConstructXmlTextReaderOnlySetDtdProcessingProhibitTargetFx452ShouldNotGenerateDiagnostic()
         {
             VerifyCSharp(@"
@@ -1359,5 +1361,48 @@ Namespace TestNamespace
 End Namespace"
             );
         }
+
+        [Fact]
+        // This doesn't work, GetDotNetFrameworkVersion is still v4.6.
+        public void ConstructXmlTextReaderOnlySetDtdProcessingProhibitTargetFx451ShouldNotGenerateDiagnostic()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Reflection;               
+using System.Xml;   
+
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute("".NETFramework,Version=v4.5.1"", FrameworkDisplayName = "".NET Framework 4.5.1"")]
+
+namespace TestNamespace
+{
+    public class TestClass
+    {
+        public void TestMethod(string path)
+        {
+            XmlTextReader reader = new XmlTextReader(path);
+            reader.DtdProcessing = DtdProcessing.Prohibit;
+        }
+    }
+}
+"
+            );
+
+            VerifyBasic(@"
+Imports System.Reflection
+Imports System.Xml
+
+<Assembly: System.Runtime.Versioning.TargetFrameworkAttribute("".NETFramework, Version = v4.5.1"", FrameworkDisplayName := "".NET Framework 4.5.1"")>
+
+Namespace TestNamespace
+    Public Class TestClass
+        Public Sub TestMethod(path As String)
+            Dim reader As New XmlTextReader(path)
+            reader.DtdProcessing = DtdProcessing.Prohibit
+        End Sub
+    End Class
+End Namespace"
+            );
+        }
+
     }
 }

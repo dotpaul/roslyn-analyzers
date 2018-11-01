@@ -8,7 +8,7 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private readonly string _CA3075InnerXmlMessage = MicrosoftNetFrameworkAnalyzersResources.DoNotUseSetInnerXmlMessage;
+        protected readonly string _CA3075InnerXmlMessage = MicrosoftNetFrameworkAnalyzersResources.DoNotUseSetInnerXmlMessage;
 
         [Fact]
         public void UseXmlDocumentSetInnerXmlShouldGenerateDiagnostic()

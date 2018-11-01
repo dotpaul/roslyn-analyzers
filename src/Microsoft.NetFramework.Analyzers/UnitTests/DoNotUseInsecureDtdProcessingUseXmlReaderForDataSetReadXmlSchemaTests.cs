@@ -8,12 +8,12 @@ namespace Microsoft.NetFramework.Analyzers.UnitTests
 {
     public partial class DoNotUseInsecureDtdProcessingAnalyzerTests : DiagnosticAnalyzerTestBase
     {
-        private DiagnosticResult CA3075ReadXmlSchemaGetCSharpResultAt(int line, int column)
+        protected DiagnosticResult CA3075ReadXmlSchemaGetCSharpResultAt(int line, int column)
         {
             return GetCSharpResultAt(line, column, CA3075RuleId, string.Format(_CA3075LoadXmlMessage, "ReadXmlSchema"));
         }
 
-        private DiagnosticResult CA3075ReadXmlSchemaGetBasicResultAt(int line, int column)
+        protected DiagnosticResult CA3075ReadXmlSchemaGetBasicResultAt(int line, int column)
         {
             return GetBasicResultAt(line, column, CA3075RuleId, string.Format(_CA3075LoadXmlMessage, "ReadXmlSchema"));
         }
