@@ -3439,8 +3439,9 @@ using System.Reflection;
             GetCSharpResultAt(14, 36, "IInterface PropConvert.ToSettings(object o)", "o"));
         }
 
-        [Fact]
-        public void Issue1870_2()
+
+        [Fact, WorkItem(1870, "https://github.com/dotnet/roslyn-analyzers/issues/1870")]
+        public void Issue1870_02()
         {
             VerifyCSharp(@"
 using System;
@@ -3463,6 +3464,283 @@ namespace ANamespace
         }
     }
 }");
+        }
+
+        [Fact]
+        public void Issue1886()
+        {
+            VerifyCSharp(@"
+namespace ANamespace {
+    using System;
+    using System.Globalization;
+    using System.Web;
+    using System.Xml;
+
+    public interface IItemManager {
+        Thing Get(int id);
+    }
+
+    public interface IItem {
+        Thing Thing { get; }
+    }
+
+    public interface IUpdateModel {
+        void TryUpdateModel(ItemPart part, string prefix, object obj1, object obj2);
+        void AddModelError(string key, LocalizedString errorMessage);
+    }
+
+    public interface IWorkContextAccessor {
+        WorkContext GetContext();
+    }
+
+    public interface IBlahService {
+        void Blah1(int id);
+        void Blah2(int id);
+        void Blah3(int id);
+    }
+
+    public interface IServiceServices {
+        ITransactionManager TransactionManager { get; }
+        IAuthorizer Authorizer { get; }
+        INotifier Notifier { get; }
+    }
+
+    public interface ITransactionManager {
+        void Cancel();
+    }
+
+    public interface IAuthorizer  {
+        bool IsAuthorized(Permission permission, LocalizedString message);
+    }
+
+    public interface INotifier {
+        void Add(NotifyType type, LocalizedString message);
+    }
+
+    public class LocalizedString {
+    }
+
+    public delegate LocalizedString Localizer(string text, params object[] args);
+
+    public class WorkContext {
+        public HttpContextBase HttpContext { get; set; }
+        public IUser CurrentUser { get; set; }
+        public ISite CurrentSite { get; set; }
+    }
+
+    public interface ISite : IItem {
+    }
+
+    public interface ICommonPart : IItem {
+        IItem Container { get; set; }
+    }
+
+    public class ItemSettings : ContentPart {
+        public bool UseOne { get; set; }
+    }
+
+    public interface IUser {
+        string UserName { get; }
+    }
+
+    public enum NotifyType {
+        Information,
+    }
+
+    public class Thing : IItem {
+        Thing IItem.Thing { get ; }
+        public IItem Get(Type partType) {
+            if (partType == typeof(Thing))
+                return this;
+            return null;
+        }
+        public int Id { get { return Record == null ? 0 : Record.Id; } }
+        public ThingRecord Record { get { return VersionRecord == null ? null : VersionRecord.ThingRecord; } }
+        public ThingVersionRecord VersionRecord { get; set; }
+    }
+
+    public class ThingRecord {
+        public virtual int Id { get; set; }
+    }
+
+    public abstract class ContentPartRecord {
+        public virtual int Id { get; set; }
+        public virtual ThingRecord ThingRecord { get; set; }
+    }
+
+    public class ThingVersionRecord {
+        public virtual ThingRecord ThingRecord { get; set; }
+    }
+
+    public enum Status {
+        Status1,
+        Status2,
+    }
+
+    public class ItemPart {
+        public Thing Thing { get; set; }
+        public ItemPartRecord Record { get; set; }
+        public Status Status { get; set; }
+        public int Id {
+            get { return Thing.Id; }
+        }
+        public string UserName {
+            get { return Record.UserName; }
+            set { Record.UserName = value; }
+        }
+        public string Actor {
+            get { return Record.Actor; }
+            set { Record.Actor = value; }
+        }
+        public int ActedOn {
+            get { return Record.ActedOn; }
+            set { Record.ActedOn = value; }
+        }
+    }
+
+    public class ContentPart : IItem {
+        public virtual Thing Thing { get; set; }
+        public int Id {
+            get { return Thing.Id; }
+        }
+    }
+
+    public class ItemPartRecord : ContentPartRecord {
+        public virtual string Actor { get; set; }
+        public virtual string UserName { get; set; }
+        public virtual Status Status { get; set; }
+        public virtual int ActedOn { get; set; }
+    }
+
+    public class ActingPart : ContentPart {
+        public bool Active { get; set; }
+    }
+
+    public class Permissions {
+        public static readonly Permission BlahPermission = new Permission();
+    }
+
+    public class Permission {
+    }
+
+    public static class Extensions {
+        public static T Get<T>(this IItemManager manager, int id) where T : class, IItem {
+            var thing = manager.Get(id);
+            return thing == null ? null : thing.Get<T>();
+        }
+
+        public static T Get<T>(this IItem item) where T : IItem {
+            return item == null ? default(T) : (T)item.Thing.Get(typeof(T));
+        }
+
+        public static T As<T>(this IItem item) where T : IItem {
+            return item == null ? default(T) : (T)item.Thing.Get(typeof(T));
+        }
+
+        public static void Information(this INotifier notifier, LocalizedString message) {
+            notifier.Add(NotifyType.Information, message);
+        }
+    }
+
+    public class ItemPartDriver {
+        private readonly IItemManager _itemManager;
+        private readonly IWorkContextAccessor _workContextAccessor;
+        private readonly IBlahService _blahService;
+        private readonly IServiceServices _serviceServices;
+
+        protected string Prefix { get { return ""Prefix""; } }
+
+        public Localizer T { get; set; }
+
+        public ItemPartDriver(
+            IItemManager itemManager,
+            IWorkContextAccessor workContextAccessor,
+            IBlahService blahService,
+            IServiceServices serviceServices,
+            Localizer localizer)
+        {
+            _itemManager = itemManager;
+            _workContextAccessor = workContextAccessor;
+            _blahService = blahService;
+            _serviceServices = serviceServices;
+
+            T = localizer;
+        }
+
+        public object Editor(object obj1, object obj2) {
+            return null;
+        }
+
+        public object Editor(ItemPart part, IUpdateModel updater, dynamic shapeHelper)
+        {
+            updater.TryUpdateModel(part, Prefix, null, null);
+            var workContext = _workContextAccessor.GetContext();
+
+            var httpContext = workContext.HttpContext;
+            var name = httpContext.Request.Form[""formvariable""];
+            if (!string.IsNullOrEmpty(name) && String.Equals(name, ""blah1"", StringComparison.OrdinalIgnoreCase))
+            {
+                if (_serviceServices.Authorizer.IsAuthorized(Permissions.BlahPermission, T(""You no blah1"")))
+                {
+                    _blahService.Blah1(part.Id);
+                    _serviceServices.Notifier.Information(T(""Blah1 success""));
+                    return Editor(part, shapeHelper);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(name) && String.Equals(name, ""blah2"", StringComparison.OrdinalIgnoreCase))
+            {
+                if (_serviceServices.Authorizer.IsAuthorized(Permissions.BlahPermission, T(""You no blah2"")))
+                {
+                    _blahService.Blah2(part.Id);
+                    _serviceServices.Notifier.Information(T(""Blah2 success""));
+                    return Editor(part, shapeHelper);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(name) && String.Equals(name, ""blah3"", StringComparison.OrdinalIgnoreCase))
+            {
+                if (_serviceServices.Authorizer.IsAuthorized(Permissions.BlahPermission, T(""You no blah3"")))
+                {
+                    _blahService.Blah3(part.Id);
+                    _serviceServices.Notifier.Information(T(""Blah3 success""));
+                    return Editor(part, shapeHelper);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(name) && String.Equals(name, ""blah4"", StringComparison.OrdinalIgnoreCase))
+            {
+                _serviceServices.Notifier.Information(T(""Blah4 success""));
+                return Editor(part, shapeHelper);
+            }
+
+            var currentUser = workContext.CurrentUser;
+            part.UserName = (currentUser != null ? currentUser.UserName : null);
+
+            if (currentUser != null)
+                part.Actor = currentUser.UserName;
+            else if (string.IsNullOrWhiteSpace(part.Actor))
+            {
+                updater.AddModelError(""ItemPart.Actor"", T(""Actor is mandatory""));
+            }
+
+            var useOne = workContext.CurrentSite.As<ItemSettings>().UseOne;
+            part.Status = useOne ? Status.Status1 : Status.Status2;
+
+            var actedOn = _itemManager.Get<ICommonPart>(part.ActedOn);
+
+            var actingPart = actedOn.As<ActingPart>();
+            if (actingPart == null || !actingPart.Active)
+            {
+                _serviceServices.TransactionManager.Cancel();
+                return Editor(part, shapeHelper);
+            }
+
+            return Editor(part, shapeHelper);
+        }
+    }
+}
+");
         }
     }
 }
