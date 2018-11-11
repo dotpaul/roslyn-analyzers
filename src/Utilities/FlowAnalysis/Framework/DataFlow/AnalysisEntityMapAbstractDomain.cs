@@ -137,8 +137,27 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 }
             }
 
-            Debug.Assert(Compare(map1, resultMap) <= 0);
-            Debug.Assert(Compare(map2, resultMap) <= 0);
+            int compareResult = Compare(map1, resultMap);
+            if (compareResult > 0)
+            {
+                if (!Debugger.IsAttached)
+                {
+                    Debugger.Launch();
+                }
+
+                Debug.Fail("Non-monotonic map merge from map1");
+            }
+
+            compareResult = Compare(map2, resultMap);
+            if (compareResult > 0)
+            {
+                if (!Debugger.IsAttached)
+                {
+                    Debugger.Launch();
+                }
+
+                Debug.Fail("Non-monotonic map merge from map2");
+            }
 
             return resultMap;
         }
