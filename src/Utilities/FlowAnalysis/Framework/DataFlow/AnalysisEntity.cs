@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     ///     3. An optional parent key if this key has the same <see cref="InstanceLocation"/> as the parent (i.e. parent is a value type).
     /// </para>
     /// </summary>
-    internal sealed class AnalysisEntity : CacheBasedEquatable<AnalysisEntity>
+    internal sealed class AnalysisEntity : CacheBasedEquatable8<AnalysisEntity>
     {
         private readonly ImmutableArray<int> _ignoringLocationHashCodeParts;
         private readonly int _ignoringLocationHashCode;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Analyzer.Utilities.Extensions;
+using Microsoft.CodeAnalysis;
 
 namespace Analyzer.Utilities
 {
@@ -47,14 +48,48 @@ namespace Analyzer.Utilities
 
         internal static int Combine<T>(ImmutableHashSet<T> set) => Combine(set, 0);
         internal static int Combine<T>(ImmutableHashSet<T> set, int currentKey)
-            => Combine(set.Select(element => element.GetHashCode()).Order(),
-                       set.Count,
-                       currentKey);
+        {
+            int result;
+            ArrayBuilder<int> builder = ArrayBuilder<int>.GetInstance(set.Count);
+            try
+            {
+                foreach (T element in set)
+                {
+                    builder.Add(element.GetHashCode());
+                }
+
+                builder.Sort();
+                result = Combine(builder, builder.Count, currentKey);
+            }
+            finally
+            {
+                builder.Free();
+            }
+
+            return result;
+        }
 
         internal static int Combine<TKey, TValue>(ImmutableDictionary<TKey, TValue> dictionary) => Combine(dictionary, 0);
         internal static int Combine<TKey, TValue>(ImmutableDictionary<TKey, TValue> dictionary, int currentKey)
-            => Combine(dictionary.Select(kvp => Combine(kvp.Key.GetHashCode(), kvp.Value.GetHashCode())).Order(),
-                       dictionary.Count,
-                       currentKey);
+        {
+            int result;
+            ArrayBuilder<int> builder = ArrayBuilder<int>.GetInstance(dictionary.Count);
+            try
+            {
+                foreach (KeyValuePair<TKey, TValue> kvp in dictionary)
+                {
+                    builder.Add(Combine(kvp.Key.GetHashCode(), kvp.Value.GetHashCodeOrDefault()));
+                }
+
+                builder.Sort();
+                result = Combine(builder, builder.Count, currentKey);
+            }
+            finally
+            {
+                builder.Free();
+            }
+
+            return result;
+        }
     }
 }

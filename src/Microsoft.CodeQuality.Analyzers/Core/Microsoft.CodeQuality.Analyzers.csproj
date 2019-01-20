@@ -9,10 +9,35 @@
     <PackageId>*$(MSBuildProjectFullPath)*</PackageId>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="..\..\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEquatableEmbeddedParts.txt">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CacheBasedEquatableEmbeddedParts.tt</DependentUpon>
+    </Content>
+    <Content Include="..\..\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEqutableEmbeddedParts.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CacheBasedEqutableEmbeddedParts.tt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Microsoft.CodeQuality.CSharp.Analyzers" />
     <InternalsVisibleTo Include="Microsoft.CodeQuality.VisualBasic.Analyzers" />
     <InternalsVisibleTo Include="Microsoft.CodeQuality.Analyzers.UnitTests" />
-    <PackageReference Include="Humanizer.Core" Version="$(HumanizerVersion)"/>
+    <PackageReference Include="Humanizer.Core" Version="$(HumanizerVersion)" />
   </ItemGroup>
   <Import Project="..\..\Utilities\Analyzer.Utilities.projitems" Label="Shared" />
+  <ItemGroup>
+    <None Update="S:\dp-roslyn-analyzers\src\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEquatableEmbeddedParts.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>CacheBasedEquatableEmbeddedParts.txt</LastGenOutput>
+    </None>
+    <None Update="S:\dp-roslyn-analyzers\src\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEqutableEmbeddedParts.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>CacheBasedEqutableEmbeddedParts.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
 </Project>

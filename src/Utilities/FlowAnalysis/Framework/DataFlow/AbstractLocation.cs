@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     ///     3. Location created for certain symbols which do not have a declaration in executable code, i.e. no <see cref="IOperation"/> for declaration (such as parameter symbols, member symbols, etc. - <see cref="CreateSymbolLocation(ISymbol)"/>).
     /// </para>
     /// </summary>
-    internal sealed class AbstractLocation : CacheBasedEquatable<AbstractLocation>
+    internal sealed class AbstractLocation : CacheBasedEquatable7<AbstractLocation>
     {
         private readonly bool _isSpecialSingleton;
         public static readonly AbstractLocation Null = new AbstractLocation(creationOpt: null, creationCallStackOpt: null, analysisEntityOpt: null, symbolOpt: null, locationTypeOpt: null, isSpecialSingleton: true);

@@ -12,7 +12,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
     /// Abstract tainted data value shared by a set of one of more <see cref="AnalysisEntity"/> instances tracked by <see cref="TaintedDataAnalysis"/>.
     /// </summary>
     [DebuggerDisplay("{Kind} ({SourceOrigins.Count} source origins)")]
-    internal sealed class TaintedDataAbstractValue : CacheBasedEquatable<TaintedDataAbstractValue>
+    internal sealed class TaintedDataAbstractValue : CacheBasedEquatable2<TaintedDataAbstractValue>
     {
         public static readonly TaintedDataAbstractValue NotTainted = new TaintedDataAbstractValue(TaintedDataAbstractValueKind.NotTainted, ImmutableHashSet<SymbolAccess>.Empty);
 

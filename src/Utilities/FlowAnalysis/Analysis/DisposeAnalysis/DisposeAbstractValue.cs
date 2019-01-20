@@ -12,7 +12,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.DisposeAnalysis
     /// It contains the set of <see cref="IOperation"/>s that dispose an associated disposable <see cref="AbstractLocation"/> and
     /// the dispose <see cref="Kind"/>.
     /// </summary>
-    internal class DisposeAbstractValue : CacheBasedEquatable<DisposeAbstractValue>
+    internal class DisposeAbstractValue : CacheBasedEquatable2<DisposeAbstractValue>
     {
         public static readonly DisposeAbstractValue NotDisposable = new DisposeAbstractValue(DisposeAbstractValueKind.NotDisposable);
         public static readonly DisposeAbstractValue NotDisposed = new DisposeAbstractValue(DisposeAbstractValueKind.NotDisposed);

@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     /// 7. Set of analysis contexts currently being analyzed.
     /// </summary>
     internal sealed class InterproceduralAnalysisData<TAnalysisData, TAnalysisContext, TAbstractAnalysisValue>
-        : CacheBasedEquatable<InterproceduralAnalysisData<TAnalysisData, TAnalysisContext, TAbstractAnalysisValue>>
+        : CacheBasedEquatable10<InterproceduralAnalysisData<TAnalysisData, TAnalysisContext, TAbstractAnalysisValue>>
         where TAnalysisContext: class, IDataFlowAnalysisContext
     {
         public InterproceduralAnalysisData(

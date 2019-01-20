@@ -6,7 +6,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     /// Represents an abstract index into a location.
     /// It is used by an <see cref="AnalysisEntity"/> for operations such as an <see cref="IArrayElementReferenceOperation"/>, index access <see cref="IPropertyReferenceOperation"/>, etc.
     /// </summary>
-    internal abstract partial class AbstractIndex : CacheBasedEquatable<AbstractIndex>
+    internal abstract partial class AbstractIndex : CacheBasedEquatable2<AbstractIndex>
     {
         public static AbstractIndex Create(int index) => new ConstantValueIndex(index);
         public static AbstractIndex Create(AnalysisEntity analysisEntity) => new AnalysisEntityBasedIndex(analysisEntity);

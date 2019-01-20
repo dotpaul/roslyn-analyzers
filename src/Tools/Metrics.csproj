@@ -7,9 +7,34 @@
   </PropertyGroup>
   <Import Project="..\Utilities\Analyzer.Utilities.projitems" Label="Shared" />
   <ItemGroup>
+    <Content Include="..\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEquatableEmbeddedParts.txt">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CacheBasedEquatableEmbeddedParts.tt</DependentUpon>
+    </Content>
+    <Content Include="..\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEqutableEmbeddedParts.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CacheBasedEqutableEmbeddedParts.tt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Build.Locator" Version="$(MicrosoftBuildLocatorVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(MicrosoftCodeAnalysisVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="$(MicrosoftCodeAnalysisVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Features" Version="$(MicrosoftCodeAnalysisVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="S:\dp-roslyn-analyzers\src\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEquatableEmbeddedParts.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>CacheBasedEquatableEmbeddedParts.txt</LastGenOutput>
+    </None>
+    <None Update="S:\dp-roslyn-analyzers\src\Utilities\FlowAnalysis\Framework\DataFlow\CacheBasedEqutableEmbeddedParts.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>CacheBasedEqutableEmbeddedParts.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 </Project>

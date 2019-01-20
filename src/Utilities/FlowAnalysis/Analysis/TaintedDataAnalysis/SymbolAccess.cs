@@ -11,7 +11,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
     /// Represents an access to a symbol.
     /// </summary>
     /// <remarks>This is useful to track where tainted data originated from as a source, or where tainted data entered as a sink.</remarks>
-    internal sealed class SymbolAccess : CacheBasedEquatable<SymbolAccess>
+    internal sealed class SymbolAccess : CacheBasedEquatable3<SymbolAccess>
     {
         public SymbolAccess(ISymbol symbol, SyntaxNode syntaxNode, ISymbol accessingMethod)
         {

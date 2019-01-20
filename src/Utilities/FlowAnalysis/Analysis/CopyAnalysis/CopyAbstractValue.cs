@@ -11,7 +11,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.CopyAnalysis
     /// <summary>
     /// Abstract copy value shared by a set of one of more <see cref="AnalysisEntity"/> instances tracked by <see cref="CopyAnalysis"/>.
     /// </summary>
-    internal class CopyAbstractValue : CacheBasedEquatable<CopyAbstractValue>
+    internal class CopyAbstractValue : CacheBasedEquatable2<CopyAbstractValue>
     {
         public static CopyAbstractValue NotApplicable = new CopyAbstractValue(CopyAbstractValueKind.NotApplicable);
         public static CopyAbstractValue Invalid = new CopyAbstractValue(CopyAbstractValueKind.Invalid);

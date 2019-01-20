@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis
     /// <summary>
     /// Abstract value content data value for <see cref="AnalysisEntity"/>/<see cref="IOperation"/> tracked by <see cref="ValueContentAnalysis"/>.
     /// </summary>
-    internal partial class ValueContentAbstractValue : CacheBasedEquatable<ValueContentAbstractValue>
+    internal partial class ValueContentAbstractValue : CacheBasedEquatable2<ValueContentAbstractValue>
     {
         public static readonly ValueContentAbstractValue UndefinedState = new ValueContentAbstractValue(ImmutableHashSet<object>.Empty, ValueContainsNonLiteralState.Undefined);
         public static readonly ValueContentAbstractValue InvalidState = new ValueContentAbstractValue(ImmutableHashSet<object>.Empty, ValueContainsNonLiteralState.Invalid);

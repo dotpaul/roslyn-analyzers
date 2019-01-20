@@ -6365,5 +6365,248 @@ using System.Linq;
     }
 }");
         }
+
+        [Fact]
+        public void Something()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+
+namespace OtherAssemblyModels
+{
+    class TestClass
+    {
+        public ITableHolder<PDR2> _partDefinitionRepository;
+        public IFormatter _settingsFormatter;
+
+        private void Apply(CD model, DR record)
+        {
+            record.DisplayName = model.DisplayName;
+            record.Settings = _settingsFormatter.Map(model.Settings).ToString();
+
+            var toRemove = record.ContentTypePartDefinitionRecords
+                .Where(partDefinitionRecord => model.Parts.All(part => partDefinitionRecord.ContentPartDefinitionRecord.Name != part.PartDefinition.Name))
+                .ToList();
+
+            foreach (var remove in toRemove)
+            {
+                record.ContentTypePartDefinitionRecords.Remove(remove);
+            }
+
+            foreach (var part in model.Parts)
+            {
+                var partName = part.PartDefinition.Name;
+                var typePartRecord = record.ContentTypePartDefinitionRecords.SingleOrDefault(r => r.ContentPartDefinitionRecord.Name == partName);
+                if (typePartRecord == null)
+                {
+                    typePartRecord = new PDR { ContentPartDefinitionRecord = Acquire(part.PartDefinition) };
+                    record.ContentTypePartDefinitionRecords.Add(typePartRecord);
+                }
+                Apply(part, typePartRecord);
+            }
+        }
+
+        private void Apply(PD model, PDR record)
+        {
+            record.Settings = Compose(_settingsFormatter.Map(model.Settings));
+        }
+
+        private static string Compose(XElement map)
+        {
+            if (map == null)
+                return null;
+
+            return map.ToString();
+        }
+
+        private PDR2 Acquire(PD2 contentPartDefinition)
+        {
+            var result = _partDefinitionRepository.Table.SingleOrDefault(x => x.Name == contentPartDefinition.Name);
+            if (result == null)
+            {
+                result = new PDR2 { Name = contentPartDefinition.Name };
+                _partDefinitionRepository.Create(result);
+            }
+            return result;
+        }
+    }
+
+
+    public class CD
+    {
+        //public ContentTypeDefinition(string name, string displayName, IEnumerable<ContentTypePartDefinition> parts, SettingsDictionary settings)
+        //{
+        //    Name = name;
+        //    DisplayName = displayName;
+        //    Parts = parts.ToReadOnlyCollection();
+        //    Settings = settings;
+        //}
+
+        //public ContentTypeDefinition(string name, string displayName)
+        //{
+        //    Name = name;
+        //    DisplayName = displayName;
+        //    Parts = Enumerable.Empty<ContentTypePartDefinition>();
+        //    Settings = new SettingsDictionary();
+        //}
+
+        public string Name { get; private set; }
+        public string DisplayName { get; private set; }
+        public IEnumerable<PD> Parts { get; private set; }
+        public SettingsDictionary Settings { get; private set; }
+    }
+
+    public class PD
+    {
+
+        public PD(PD2 contentPartDefinition, SettingsDictionary settings)
+        {
+            PartDefinition = contentPartDefinition;
+            Settings = settings;
+        }
+
+        public PD()
+        {
+            Settings = new SettingsDictionary();
+        }
+
+        public PD2 PartDefinition { get; private set; }
+        public SettingsDictionary Settings { get; private set; }
+        public CD ContentTypeDefinition { get; set; }
+    }
+
+    public class DR
+    {
+        public DR()
+        {
+            ContentTypePartDefinitionRecords = new List<PDR>();
+        }
+
+        public virtual int Id { get; set; }
+        public virtual string Name { get; set; }
+        public virtual string DisplayName { get; set; }
+        public virtual bool Hidden { get; set; }
+        public virtual string Settings { get; set; }
+
+        public virtual IList<PDR> ContentTypePartDefinitionRecords { get; set; }
+    }
+
+
+    public class PDR
+    {
+        public virtual int Id { get; set; }
+        public virtual PDR2 ContentPartDefinitionRecord { get; set; }
+        public virtual string Settings { get; set; }
+    }
+
+    public class PDR2
+    {
+        public PDR2()
+        {
+            //ContentPartFieldDefinitionRecords = new List<ContentPartFieldDefinitionRecord>();
+        }
+
+        public virtual int Id { get; set; }
+        public virtual string Name { get; set; }
+        public virtual bool Hidden { get; set; }
+        public virtual string Settings { get; set; }
+
+ //       public virtual IList<ContentPartFieldDefinitionRecord> ContentPartFieldDefinitionRecords { get; set; }
+
+    }
+
+
+    public class PD2
+    {
+        //public ContentPartDefinition(string name, IEnumerable<ContentPartFieldDefinition> fields, SettingsDictionary settings)
+        //{
+        //    Name = name;
+        //    Fields = fields.ToReadOnlyCollection();
+        //    Settings = settings;
+        //}
+
+        //public ContentPartDefinition(string name)
+        //{
+        //    Name = name;
+        //    Fields = Enumerable.Empty<ContentPartFieldDefinition>();
+        //    Settings = new SettingsDictionary();
+        //}
+
+        public string Name { get; private set; }
+        public IEnumerable<FD> Fields { get; private set; }
+        public SettingsDictionary Settings { get; private set; }
+    }
+
+    public class SettingsDictionary : Dictionary<string, string>
+    {
+    }
+
+    public interface ITableHolder<T>
+    {
+        void Create(T entity);
+        //void Update(T entity);
+        //void Delete(T entity);
+        //void Copy(T source, T target);
+        //void Flush();
+
+        //T Get(int id);
+        //T Get(Expression<Func<T, bool>> predicate);
+
+        IQueryable<T> Table { get; }
+
+        //int Count(Expression<Func<T, bool>> predicate);
+        //IEnumerable<T> Fetch(Expression<Func<T, bool>> predicate);
+        //IEnumerable<T> Fetch(Expression<Func<T, bool>> predicate, Action<Orderable<T>> order);
+        //IEnumerable<T> Fetch(Expression<Func<T, bool>> predicate, Action<Orderable<T>> order, int skip, int count);
+    }
+
+    public interface IFormatter
+    {
+        SettingsDictionary Map(XElement element);
+
+        XElement Map(SettingsDictionary settingsDictionary);
+    }
+
+
+    public class FD
+    {
+        public string DisplayNameKey;
+
+        //public ContentPartFieldDefinition(string name)
+        //{
+        //    Name = name;
+        //    FieldDefinition = new ContentFieldDefinition(null);
+        //    Settings = new SettingsDictionary();
+        //}
+        //public ContentPartFieldDefinition(ContentFieldDefinition contentFieldDefinition, string name, SettingsDictionary settings)
+        //{
+        //    Name = name;
+        //    FieldDefinition = contentFieldDefinition;
+        //    Settings = settings;
+        //}
+
+        public string Name { get; private set; }
+
+        public string DisplayName
+        {
+            get
+            {
+                // if none is defined, generate one from the technical name
+                return Settings.ContainsKey(DisplayNameKey) ? Settings[DisplayNameKey] : Name;
+            }
+            set { Settings[DisplayNameKey] = value; }
+        }
+
+        //public ContentFieldDefinition FieldDefinition { get; private set; }
+        public SettingsDictionary Settings { get; private set; }
+    }
+}
+");
+        }
     }
 }
