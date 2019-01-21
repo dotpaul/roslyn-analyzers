@@ -17,14 +17,15 @@ using Analyzer.Utilities;
 namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 {
     /// <summary>
-    /// 1-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 1-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable1<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 1;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable1()
         {
@@ -40,9 +41,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 1)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -68,13 +69,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 1 hash code parts.
+        /// Fills the ArrayBuilder with at most 1 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -117,15 +119,16 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 2-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 2-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable2<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 2;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable2()
         {
@@ -141,9 +144,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 2)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -171,13 +174,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 2 hash code parts.
+        /// Fills the ArrayBuilder with at most 2 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -221,16 +225,17 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 3-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 3-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable3<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 3;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable3()
         {
@@ -246,9 +251,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 3)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -278,13 +283,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 3 hash code parts.
+        /// Fills the ArrayBuilder with at most 3 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -329,17 +335,18 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 4-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 4-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable4<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 4;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable4()
         {
@@ -355,9 +362,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 4)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -389,13 +396,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 4 hash code parts.
+        /// Fills the ArrayBuilder with at most 4 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -441,18 +449,19 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 5-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 5-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable5<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 5;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable5()
         {
@@ -468,9 +477,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 5)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -504,13 +513,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 5 hash code parts.
+        /// Fills the ArrayBuilder with at most 5 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -557,19 +567,20 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 6-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 6-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable6<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 6;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable6()
         {
@@ -585,9 +596,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 6)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -623,13 +634,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 6 hash code parts.
+        /// Fills the ArrayBuilder with at most 6 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -677,20 +689,21 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 7-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 7-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable7<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 7;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable7()
         {
@@ -706,9 +719,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 7)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -746,13 +759,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 7 hash code parts.
+        /// Fills the ArrayBuilder with at most 7 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -801,21 +815,22 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 8-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 8-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable8<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 8;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable8()
         {
@@ -831,9 +846,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 8)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -873,13 +888,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 8 hash code parts.
+        /// Fills the ArrayBuilder with at most 8 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -929,22 +945,23 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 9-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 9-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable9<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 9;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable9()
         {
@@ -960,9 +977,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 9)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1004,13 +1021,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 9 hash code parts.
+        /// Fills the ArrayBuilder with at most 9 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1061,23 +1079,24 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 10-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 10-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable10<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 10;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable10()
         {
@@ -1093,9 +1112,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 10)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1139,13 +1158,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 10 hash code parts.
+        /// Fills the ArrayBuilder with at most 10 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1197,24 +1217,25 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 11-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 11-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable11<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        int _lazyHashCodePart10;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 11;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCodePart10;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable11()
         {
@@ -1230,9 +1251,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 11)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1278,13 +1299,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 11 hash code parts.
+        /// Fills the ArrayBuilder with at most 11 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1337,25 +1359,26 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 12-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 12-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable12<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        int _lazyHashCodePart10;
-        int _lazyHashCodePart11;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 12;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCodePart10;
+        private int _lazyHashCodePart11;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable12()
         {
@@ -1371,9 +1394,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 12)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1421,13 +1444,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 12 hash code parts.
+        /// Fills the ArrayBuilder with at most 12 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1481,26 +1505,27 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 13-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 13-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable13<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        int _lazyHashCodePart10;
-        int _lazyHashCodePart11;
-        int _lazyHashCodePart12;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 13;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCodePart10;
+        private int _lazyHashCodePart11;
+        private int _lazyHashCodePart12;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable13()
         {
@@ -1516,9 +1541,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 13)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1568,13 +1593,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 13 hash code parts.
+        /// Fills the ArrayBuilder with at most 13 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1629,27 +1655,28 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 14-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 14-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable14<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        int _lazyHashCodePart10;
-        int _lazyHashCodePart11;
-        int _lazyHashCodePart12;
-        int _lazyHashCodePart13;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 14;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCodePart10;
+        private int _lazyHashCodePart11;
+        private int _lazyHashCodePart12;
+        private int _lazyHashCodePart13;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable14()
         {
@@ -1665,9 +1692,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 14)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1719,13 +1746,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 14 hash code parts.
+        /// Fills the ArrayBuilder with at most 14 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -1781,28 +1809,29 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     }
 
     /// <summary>
-    /// 15-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// 15-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
     internal abstract class CacheBasedEquatable15<T> : IEquatable<T>
         where T: class
     {
-        int _lazyHashCodePart0;
-        int _lazyHashCodePart1;
-        int _lazyHashCodePart2;
-        int _lazyHashCodePart3;
-        int _lazyHashCodePart4;
-        int _lazyHashCodePart5;
-        int _lazyHashCodePart6;
-        int _lazyHashCodePart7;
-        int _lazyHashCodePart8;
-        int _lazyHashCodePart9;
-        int _lazyHashCodePart10;
-        int _lazyHashCodePart11;
-        int _lazyHashCodePart12;
-        int _lazyHashCodePart13;
-        int _lazyHashCodePart14;
-        private int _lazyHashCode;
+        private const int MaxCapacity = 15;
         private int _lazyHashCodePartsCount = -1;
+        private int _lazyHashCodePart0;
+        private int _lazyHashCodePart1;
+        private int _lazyHashCodePart2;
+        private int _lazyHashCodePart3;
+        private int _lazyHashCodePart4;
+        private int _lazyHashCodePart5;
+        private int _lazyHashCodePart6;
+        private int _lazyHashCodePart7;
+        private int _lazyHashCodePart8;
+        private int _lazyHashCodePart9;
+        private int _lazyHashCodePart10;
+        private int _lazyHashCodePart11;
+        private int _lazyHashCodePart12;
+        private int _lazyHashCodePart13;
+        private int _lazyHashCodePart14;
+        private int _lazyHashCode;
 
         protected CacheBasedEquatable15()
         {
@@ -1818,9 +1847,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > 15)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -1874,13 +1903,14 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         }
 
         /// <summary>
-        /// Fills builder with at most 15 hash code parts.
+        /// Fills the ArrayBuilder with at most 15 hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.

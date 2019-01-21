@@ -23,29 +23,28 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     {
         if (nParts > 1)
         {
-#>
-
-<#          
+            Write("\r\n");
         }
 #>
     /// <summary>
-    /// <#= nParts#>-part abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
+    /// <#= nParts #>-part capacity abstract cache based equatable implementation for objects that are compared frequently and hence need a performance optimization of using a cached hash code.
     /// </summary>
-    internal abstract class CacheBasedEquatable<#= nParts#><T> : IEquatable<T>
+    internal abstract class CacheBasedEquatable<#= nParts #><T> : IEquatable<T>
         where T: class
     {
+        private const int MaxCapacity = <#= nParts #>;
+        private int _lazyHashCodePartsCount = -1;
 <#
         for (int i = 0; i < nParts; i++)
         {
 #>
-        int _lazyHashCodePart<#= i#>;
+        private int _lazyHashCodePart<#= i #>;
 <#
         }
 #>
         private int _lazyHashCode;
-        private int _lazyHashCodePartsCount = -1;
 
-        protected CacheBasedEquatable<#= nParts#>()
+        protected CacheBasedEquatable<#= nParts #>()
         {
         }
 
@@ -59,9 +58,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     try
                     {
                         ComputeHashCodeParts(builder);
-                        if (builder.Count > <#= nParts#>)
+                        if (builder.Count > MaxCapacity)
                         {
-                            throw new InvalidOperationException($"Number of hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
+                            throw new InvalidOperationException($"{builder.Count} hash code parts exceeds capacity.  {GetType().ToString()} derives from the wrong class.");
                         }
 
                         var hashCode = HashUtilities.Combine(builder, builder.Count, GetType().GetHashCode());
@@ -86,21 +85,22 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         for (int i = 0; i < nParts; i++)
         {
 #>
-            if (builder.Count == <#= i#>) return;            
-            _lazyHashCodePart<#= i#> = builder[<#= i#>];
+            if (builder.Count == <#= i #>) return;            
+            _lazyHashCodePart<#= i #> = builder[<#= i #>];
 <#
         }
 #>
         }
 
         /// <summary>
-        /// Fills builder with at most <#= nParts#> hash code parts.
+        /// Fills the ArrayBuilder with at most <#= nParts #> hash code parts.
         /// </summary>
         protected abstract void ComputeHashCodeParts(ArrayBuilder<int> builder);
 
         public sealed override int GetHashCode() => GetOrComputeHashCode();
 
         public sealed override bool Equals(object obj) => Equals(obj as T);
+
         public bool Equals(T other)
         {
             // Perform fast equality checks first.
@@ -109,7 +109,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 return true;
             }
 
-            var otherEquatable = other as CacheBasedEquatable<#= nParts#><T>;
+            var otherEquatable = other as CacheBasedEquatable<#= nParts #><T>;
             if (otherEquatable == null || GetHashCode() != otherEquatable.GetHashCode())
             {
                 return false;
@@ -123,13 +123,13 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         for (int i = 0; i <nParts; i++)
         {
 #>
-                && _lazyHashCodePart<#= i#> == otherEquatable._lazyHashCodePart<#= i#><#= i == nParts - 1 ? ";" : "" #>
+                && _lazyHashCodePart<#= i #> == otherEquatable._lazyHashCodePart<#= i #><#= i == nParts - 1 ? ";" : "" #>
 <#
         }
 #>
         }
 
-        public static bool operator ==(CacheBasedEquatable<#= nParts#><T> value1, CacheBasedEquatable<#= nParts#><T> value2)
+        public static bool operator ==(CacheBasedEquatable<#= nParts #><T> value1, CacheBasedEquatable<#= nParts #><T> value2)
         {
             if ((object)value1 == null)
             {
@@ -143,13 +143,13 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             return value1.Equals(value2);
         }
 
-        public static bool operator !=(CacheBasedEquatable<#= nParts#><T> value1, CacheBasedEquatable<#= nParts#><T> value2)
+        public static bool operator !=(CacheBasedEquatable<#= nParts #><T> value1, CacheBasedEquatable<#= nParts #><T> value2)
         {
             return !(value1 == value2);
         }
     }
 <#
-        // end of for (int nParts = 1; nParts <= 4; nParts++)
+        // end of for (int nParts = 1; nParts <= X; nParts++)
     }     
 #>
 }
