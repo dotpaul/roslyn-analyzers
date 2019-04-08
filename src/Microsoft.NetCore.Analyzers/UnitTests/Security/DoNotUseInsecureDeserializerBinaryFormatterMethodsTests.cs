@@ -23,6 +23,41 @@ namespace Microsoft.NetCore.Analyzers.Security.UnitTests
         }
 
         [Fact]
+        public void DocSample1_CSharp_Violation()
+        {
+            VerifyCSharp(@"
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+
+public class ExampleClass
+{
+    public object MyDeserialize(byte[] bytes)
+    {
+        BinaryFormatter formatter = new BinaryFormatter();
+        return formatter.Deserialize(new MemoryStream(bytes));
+    }
+}
+",
+                GetCSharpResultAt(10, 16, Rule, "object BinaryFormatter.Deserialize(Stream serializationStream)"));
+        }
+
+        [Fact]
+        public void DocSample1_VB_Violation()
+        {
+            VerifyBasic(@"
+Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
+
+Public Class ExampleClass
+    Public Function MyDeserialize(bytes As Byte()) As Object
+        Dim formatter As BinaryFormatter = New BinaryFormatter()
+        Return formatter.Deserialize(New MemoryStream(bytes))
+    End Function
+End Class",
+                GetBasicResultAt(8, 16, Rule, "Function BinaryFormatter.Deserialize(serializationStream As Stream) As Object"));
+        }
+
+        [Fact]
         public void UnsafeDeserialize_Diagnostic()
         {
             VerifyCSharp(@"
