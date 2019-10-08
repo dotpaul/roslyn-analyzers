@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Diagnostics;
+using Analyzer.Utilities;
 using Analyzer.Utilities.Extensions;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -61,10 +62,28 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
                 return null;
             }
 
-            var analysisContext = PointsToAnalysisContext.Create(PointsToAbstractValueDomain.Default, wellKnownTypeProvider, cfg,
-                owningSymbol, analyzerOptions, interproceduralAnalysisConfig, pessimisticAnalysis, exceptionPathsAnalysis, copyAnalysisResultOpt,
-                TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
-            return TryGetOrComputeResultForAnalysisContext(analysisContext);
+            string logTarget = null;
+            if (FcaEventSource.Log.IsEnabled())
+            {
+                logTarget = owningSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                FcaEventSource.Log.StartPointsToAnalysis(logTarget, cfg.GetHashCode());
+            }
+
+            PointsToAnalysisContext analysisContext = null;
+            try
+            {
+                analysisContext = PointsToAnalysisContext.Create(PointsToAbstractValueDomain.Default, wellKnownTypeProvider, cfg,
+                  owningSymbol, analyzerOptions, interproceduralAnalysisConfig, pessimisticAnalysis, exceptionPathsAnalysis, copyAnalysisResultOpt,
+                  TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
+                return TryGetOrComputeResultForAnalysisContext(analysisContext);
+            }
+            finally
+            {
+                if (FcaEventSource.Log.IsEnabled())
+                {
+                    FcaEventSource.Log.EndPointsToAnalysis(logTarget, cfg.GetHashCode(), analysisContext.GetHashCodeOrDefault());
+                }
+            }
         }
 
         private static PointsToAnalysisResult TryGetOrComputeResultForAnalysisContext(PointsToAnalysisContext analysisContext)

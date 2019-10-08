@@ -42,6 +42,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DisposeMethodKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OperationBlockAnalysisContextExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\WellKnownDiagnosticTagsExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FcaEventSource.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\SymbolNamesOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\SymbolModifiers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PooledObjects\PooledDictionary.cs" />

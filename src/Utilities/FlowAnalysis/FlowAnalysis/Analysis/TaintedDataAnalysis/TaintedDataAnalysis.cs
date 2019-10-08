@@ -57,61 +57,79 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                 return null;
             }
 
-            WellKnownTypeProvider wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilation);
-            ValueContentAnalysisResult valueContentAnalysisResult = null;
-            CopyAnalysisResult copyAnalysisResult = null;
-            PointsToAnalysisResult pointsToAnalysisResult = null;
-            if (taintedSourceInfos.RequiresValueContentAnalysis || taintedSanitizerInfos.RequiresValueContentAnalysis || taintedSinkInfos.RequiresValueContentAnalysis)
+            string logTarget = null;
+            if (FcaEventSource.Log.IsEnabled())
             {
-                valueContentAnalysisResult = ValueContentAnalysis.TryGetOrComputeResult(
-                        cfg,
-                        containingMethod,
-                        analyzerOptions,
-                        wellKnownTypeProvider,
-                        interproceduralAnalysisConfig,
-                        out copyAnalysisResult,
-                        out pointsToAnalysisResult,
-                        pessimisticAnalysis: true,
-                        performCopyAnalysis: false);
-                if (valueContentAnalysisResult == null)
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                pointsToAnalysisResult = PointsToAnalysis.TryGetOrComputeResult(
-                cfg,
-                containingMethod,
-                analyzerOptions,
-                wellKnownTypeProvider,
-                interproceduralAnalysisConfig,
-                interproceduralAnalysisPredicateOpt: null,
-                pessimisticAnalysis: true,
-                performCopyAnalysis: false);
-                if (pointsToAnalysisResult == null)
-                {
-                    return null;
-                }
+                logTarget = containingMethod.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                FcaEventSource.Log.StartTaintedDataAnalysis(logTarget, cfg.GetHashCode());
             }
 
-            TaintedDataAnalysisContext analysisContext = TaintedDataAnalysisContext.Create(
-                TaintedDataAbstractValueDomain.Default,
-                wellKnownTypeProvider,
-                cfg,
-                containingMethod,
-                analyzerOptions,
-                interproceduralAnalysisConfig,
-                pessimisticAnalysis: false,
-                copyAnalysisResultOpt: copyAnalysisResult,
-                pointsToAnalysisResult: pointsToAnalysisResult,
-                valueContentAnalysisResult: valueContentAnalysisResult,
-                tryGetOrComputeAnalysisResult: TryGetOrComputeResultForAnalysisContext,
-                taintedSourceInfos: taintedSourceInfos,
-                taintedSanitizerInfos: taintedSanitizerInfos,
-                taintedSinkInfos: taintedSinkInfos);
+            TaintedDataAnalysisContext analysisContext = null;
+            try
+            {
+                WellKnownTypeProvider wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilation);
+                ValueContentAnalysisResult valueContentAnalysisResult = null;
+                CopyAnalysisResult copyAnalysisResult = null;
+                PointsToAnalysisResult pointsToAnalysisResult = null;
+                if (taintedSourceInfos.RequiresValueContentAnalysis || taintedSanitizerInfos.RequiresValueContentAnalysis || taintedSinkInfos.RequiresValueContentAnalysis)
+                {
+                    valueContentAnalysisResult = ValueContentAnalysis.TryGetOrComputeResult(
+                            cfg,
+                            containingMethod,
+                            analyzerOptions,
+                            wellKnownTypeProvider,
+                            interproceduralAnalysisConfig,
+                            out copyAnalysisResult,
+                            out pointsToAnalysisResult,
+                            pessimisticAnalysis: true,
+                            performCopyAnalysis: false);
+                    if (valueContentAnalysisResult == null)
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    pointsToAnalysisResult = PointsToAnalysis.TryGetOrComputeResult(
+                    cfg,
+                    containingMethod,
+                    analyzerOptions,
+                    wellKnownTypeProvider,
+                    interproceduralAnalysisConfig,
+                    interproceduralAnalysisPredicateOpt: null,
+                    pessimisticAnalysis: true,
+                    performCopyAnalysis: false);
+                    if (pointsToAnalysisResult == null)
+                    {
+                        return null;
+                    }
+                }
 
-            return TryGetOrComputeResultForAnalysisContext(analysisContext);
+                analysisContext = TaintedDataAnalysisContext.Create(
+                    TaintedDataAbstractValueDomain.Default,
+                    wellKnownTypeProvider,
+                    cfg,
+                    containingMethod,
+                    analyzerOptions,
+                    interproceduralAnalysisConfig,
+                    pessimisticAnalysis: false,
+                    copyAnalysisResultOpt: copyAnalysisResult,
+                    pointsToAnalysisResult: pointsToAnalysisResult,
+                    valueContentAnalysisResult: valueContentAnalysisResult,
+                    tryGetOrComputeAnalysisResult: TryGetOrComputeResultForAnalysisContext,
+                    taintedSourceInfos: taintedSourceInfos,
+                    taintedSanitizerInfos: taintedSanitizerInfos,
+                    taintedSinkInfos: taintedSinkInfos);
+
+                return TryGetOrComputeResultForAnalysisContext(analysisContext);
+            }
+            finally
+            {
+                if (FcaEventSource.Log.IsEnabled())
+                {
+                    FcaEventSource.Log.EndTaintedDataAnalysis(logTarget, cfg.GetHashCode(), analysisContext.GetHashCodeOrDefault());
+                }
+            }
         }
 
         private static TaintedDataAnalysisResult TryGetOrComputeResultForAnalysisContext(TaintedDataAnalysisContext analysisContext)

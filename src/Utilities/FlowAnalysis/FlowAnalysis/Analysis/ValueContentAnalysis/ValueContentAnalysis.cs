@@ -89,11 +89,29 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis
                 return null;
             }
 
-            var analysisContext = ValueContentAnalysisContext.Create(
-                ValueContentAbstractValueDomain.Default, wellKnownTypeProvider, cfg, owningSymbol, analyzerOptions,
-                interproceduralAnalysisConfig, pessimisticAnalysis, copyAnalysisResultOpt,
-                pointsToAnalysisResultOpt, TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
-            return TryGetOrComputeResultForAnalysisContext(analysisContext);
+            string logTarget = null;
+            if (FcaEventSource.Log.IsEnabled())
+            {
+                logTarget = owningSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                FcaEventSource.Log.StartValueContentAnalysis(logTarget, cfg.GetHashCode());
+            }
+
+            ValueContentAnalysisContext analysisContext = null;
+            try
+            {
+                analysisContext = ValueContentAnalysisContext.Create(
+                    ValueContentAbstractValueDomain.Default, wellKnownTypeProvider, cfg, owningSymbol, analyzerOptions,
+                    interproceduralAnalysisConfig, pessimisticAnalysis, copyAnalysisResultOpt,
+                    pointsToAnalysisResultOpt, TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
+                return TryGetOrComputeResultForAnalysisContext(analysisContext);
+            }
+            finally
+            {
+                if (FcaEventSource.Log.IsEnabled())
+                {
+                    FcaEventSource.Log.EndValueContentAnalysis(logTarget, cfg.GetHashCode(), analysisContext.GetHashCodeOrDefault());
+                }
+            }
         }
 
         private static ValueContentAnalysisResult TryGetOrComputeResultForAnalysisContext(ValueContentAnalysisContext analysisContext)

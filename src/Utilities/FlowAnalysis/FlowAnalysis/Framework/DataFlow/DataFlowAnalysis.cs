@@ -57,6 +57,17 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 return default;
             }
 
+            string logTypeName = null;
+            string logTarget = null;
+            Stopwatch logStopwatch = null;
+            if (FcaEventSource.Log.IsEnabled())
+            {
+                logTypeName = this.GetType().Name;
+                logTarget = analysisContext.OwningSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                logStopwatch = Stopwatch.StartNew();
+                FcaEventSource.Log.StartDfa(logTypeName, logTarget, cfg.OriginalOperation.GetHashCode(), analysisContext.GetHashCode());
+            }
+
             var resultBuilder = new DataFlowAnalysisResultBuilder<TAnalysisData>();
             var uniqueSuccessors = PooledHashSet<BasicBlock>.GetInstance();
             var finallyBlockSuccessorsMap = PooledDictionary<int, List<BranchWithInfo>>.GetInstance();
@@ -169,6 +180,16 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 unreachableBlocks.Free();
                 blockToUniqueInputFlowMap.Free();
                 loopRangeMap.Free();
+
+                if (FcaEventSource.Log.IsEnabled())
+                {
+                    FcaEventSource.Log.EndDfa(
+                        logTypeName,
+                        logTarget,
+                        cfg.OriginalOperation.GetHashCode(),
+                        analysisContext.GetHashCode(),
+                        (logStopwatch?.ElapsedMilliseconds).GetValueOrDefault());
+                }
             }
         }
 
