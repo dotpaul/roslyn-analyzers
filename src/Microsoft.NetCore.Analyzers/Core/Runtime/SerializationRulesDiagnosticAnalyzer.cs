@@ -97,31 +97,31 @@ namespace Microsoft.NetCore.Analyzers.Runtime
             analysisContext.RegisterCompilationStartAction(
                 (context) =>
                 {
-                    INamedTypeSymbol iserializableTypeSymbol = context.Compilation.GetTypeByMetadataName("System.Runtime.Serialization.ISerializable");
+                    INamedTypeSymbol iserializableTypeSymbol = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationISerializable);
                     if (iserializableTypeSymbol == null)
                     {
                         return;
                     }
 
-                    INamedTypeSymbol serializationInfoTypeSymbol = context.Compilation.GetTypeByMetadataName("System.Runtime.Serialization.SerializationInfo");
+                    INamedTypeSymbol serializationInfoTypeSymbol = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationSerializationInfo);
                     if (serializationInfoTypeSymbol == null)
                     {
                         return;
                     }
 
-                    INamedTypeSymbol streamingContextTypeSymbol = context.Compilation.GetTypeByMetadataName("System.Runtime.Serialization.StreamingContext");
+                    INamedTypeSymbol streamingContextTypeSymbol = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationStreamingContext);
                     if (streamingContextTypeSymbol == null)
                     {
                         return;
                     }
 
-                    INamedTypeSymbol serializableAttributeTypeSymbol = context.Compilation.GetTypeByMetadataName("System.SerializableAttribute");
+                    INamedTypeSymbol serializableAttributeTypeSymbol = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemSerializableAttribute);
                     if (serializableAttributeTypeSymbol == null)
                     {
                         return;
                     }
 
-                    INamedTypeSymbol nonSerializedAttributeTypeSymbol = context.Compilation.GetTypeByMetadataName("System.NonSerializedAttribute");
+                    INamedTypeSymbol nonSerializedAttributeTypeSymbol = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemNonSerializedAttribute);
                     if (nonSerializedAttributeTypeSymbol == null)
                     {
                         return;

@@ -3,6 +3,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Analyzer.Utilities;
+using Analyzer.Utilities.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -46,13 +47,13 @@ namespace Microsoft.NetCore.Analyzers.Runtime
 
             analysisContext.RegisterCompilationStartAction(compilationStartContext =>
             {
-                var stringType = WellKnownTypes.String(compilationStartContext.Compilation);
+                var stringType = compilationStartContext.Compilation.GetSpecialType(SpecialType.System_String);
                 if (stringType == null)
                 {
                     return;
                 }
 
-                var cultureInfo = compilationStartContext.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
+                var cultureInfo = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemGlobalizationCultureInfo);
                 var invariantCulture = cultureInfo?.GetMembers("InvariantCulture").OfType<IPropertySymbol>().FirstOrDefault();
 
                 // We want to flag calls to "ToLowerInvariant" and "ToLower(CultureInfo.InvariantCulture)".

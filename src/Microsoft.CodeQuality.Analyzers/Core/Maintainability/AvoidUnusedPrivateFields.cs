@@ -3,6 +3,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Analyzer.Utilities;
+using Analyzer.Utilities.Extensions;
 using Analyzer.Utilities.PooledObjects;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -49,7 +50,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
                     ConcurrentDictionary<IFieldSymbol, UnusedValue> referencedPrivateFields = new ConcurrentDictionary<IFieldSymbol, UnusedValue>();
 
                     ImmutableHashSet<INamedTypeSymbol> specialAttributes = GetSpecialAttributes(compilationContext.Compilation);
-                    var structLayoutAttribute = WellKnownTypes.StructLayoutAttribute(compilationContext.Compilation);
+                    var structLayoutAttribute = compilationContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeInteropServicesStructLayoutAttribute);
 
                     compilationContext.RegisterSymbolAction(
                         (symbolContext) =>
@@ -132,19 +133,19 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
         {
             var specialAttributes = PooledHashSet<INamedTypeSymbol>.GetInstance();
 
-            var fieldOffsetAttribute = WellKnownTypes.FieldOffsetAttribute(compilation);
+            var fieldOffsetAttribute = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeInteropServicesFieldOffsetAttribute);
             if (fieldOffsetAttribute != null)
             {
                 specialAttributes.Add(fieldOffsetAttribute);
             }
 
-            var mefV1Attribute = WellKnownTypes.MEFV1ExportAttribute(compilation);
+            var mefV1Attribute = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemComponentModelCompositionExportAttribute);
             if (mefV1Attribute != null)
             {
                 specialAttributes.Add(mefV1Attribute);
             }
 
-            var mefV2Attribute = WellKnownTypes.MEFV2ExportAttribute(compilation);
+            var mefV2Attribute = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemCompositionExportAttribute);
             if (mefV2Attribute != null)
             {
                 specialAttributes.Add(mefV2Attribute);

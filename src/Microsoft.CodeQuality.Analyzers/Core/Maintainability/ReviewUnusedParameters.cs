@@ -50,17 +50,17 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
 
             context.RegisterCompilationStartAction(compilationStartContext =>
             {
-                INamedTypeSymbol eventsArgSymbol = compilationStartContext.Compilation.GetTypeByMetadataName("System.EventArgs");
+                INamedTypeSymbol eventsArgSymbol = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemEventArgs);
 
                 // Ignore conditional methods (FxCop compat - One conditional will often call another conditional method as its only use of a parameter)
-                INamedTypeSymbol conditionalAttributeSymbol = WellKnownTypes.ConditionalAttribute(compilationStartContext.Compilation);
+                INamedTypeSymbol conditionalAttributeSymbol = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemDiagnosticsConditionalAttribute);
 
                 // Ignore methods with special serialization attributes (FxCop compat - All serialization methods need to take 'StreamingContext')
-                INamedTypeSymbol onDeserializingAttribute = WellKnownTypes.OnDeserializingAttribute(compilationStartContext.Compilation);
-                INamedTypeSymbol onDeserializedAttribute = WellKnownTypes.OnDeserializedAttribute(compilationStartContext.Compilation);
-                INamedTypeSymbol onSerializingAttribute = WellKnownTypes.OnSerializingAttribute(compilationStartContext.Compilation);
-                INamedTypeSymbol onSerializedAttribute = WellKnownTypes.OnSerializedAttribute(compilationStartContext.Compilation);
-                INamedTypeSymbol obsoleteAttribute = WellKnownTypes.ObsoleteAttribute(compilationStartContext.Compilation);
+                INamedTypeSymbol onDeserializingAttribute = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationOnDeserializingAttribute);
+                INamedTypeSymbol onDeserializedAttribute = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationOnDeserializedAttribute);
+                INamedTypeSymbol onSerializingAttribute = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationOnSerializingAttribute);
+                INamedTypeSymbol onSerializedAttribute = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationOnSerializedAttribute);
+                INamedTypeSymbol obsoleteAttribute = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemObsoleteAttribute);
 
                 ImmutableHashSet<INamedTypeSymbol> attributeSetForMethodsToIgnore = ImmutableHashSet.Create(
                     conditionalAttributeSymbol,
