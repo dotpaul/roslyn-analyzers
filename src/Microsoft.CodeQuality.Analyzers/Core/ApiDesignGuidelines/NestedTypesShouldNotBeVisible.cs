@@ -57,10 +57,10 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
                 {
                     Compilation compilation = compilationStartContext.Compilation;
 
-                    INamedTypeSymbol enumeratorType = compilation.GetTypeByMetadataName("System.Collections.IEnumerator");
-                    INamedTypeSymbol dataSetType = compilation.GetTypeByMetadataName("System.Data.DataSet");
-                    INamedTypeSymbol dataTableType = compilation.GetTypeByMetadataName("System.Data.DataTable");
-                    INamedTypeSymbol dataRowType = compilation.GetTypeByMetadataName("System.Data.DataRow");
+                    INamedTypeSymbol enumeratorType = compilation.GetSpecialType(SpecialType.System_Collections_IEnumerator);
+                    INamedTypeSymbol dataSetType = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemDataDataSet);
+                    INamedTypeSymbol dataTableType = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemDataDataTable);
+                    INamedTypeSymbol dataRowType = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemDataDataRow);
 
                     compilationStartContext.RegisterSymbolAction(
                         symbolAnalysisContext =>

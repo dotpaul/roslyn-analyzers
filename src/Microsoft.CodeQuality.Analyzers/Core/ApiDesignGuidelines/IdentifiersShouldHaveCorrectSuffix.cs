@@ -85,7 +85,7 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
 
             foreach (var (typeName, suffix, canSuffixBeCollection) in s_baseTypesAndTheirSuffix)
             {
-                var wellKnownNamedType = context.Compilation.GetTypeByMetadataName(typeName);
+                var wellKnownNamedType = context.Compilation.GetOrCreateTypeByMetadataName(typeName);
 
                 if (wellKnownNamedType != null && wellKnownNamedType.OriginalDefinition != null)
                 {
@@ -146,7 +146,7 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
                 }
                 , SymbolKind.NamedType);
 
-                var eventArgsType = WellKnownTypes.EventArgs(context.Compilation);
+                var eventArgsType = context.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemEventArgs);
                 if (eventArgsType != null)
                 {
                     context.RegisterSymbolAction((saContext) =>

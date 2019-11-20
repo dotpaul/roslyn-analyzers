@@ -2,14 +2,14 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using Analyzer.Utilities;
-using Analyzer.Utilities.PooledObjects;
+using System.Linq;
+using Analyzer.Utilities.Extensions;
+using Microsoft.CodeAnalysis;
 
-namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
+namespace Analyzer.Utilities
 {
     /// <summary>
-    /// Provides and caches well known types in a compilation for <see cref="DataFlowAnalysis"/>.
+    /// Provides and caches well known types in a compilation.
     /// </summary>
     public class WellKnownTypeProvider
     {
@@ -20,17 +20,6 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         {
             Compilation = compilation;
             _fullNameToTypeMap = new ConcurrentDictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
-
-            Exception = GetTypeByMetadataName(WellKnownTypeNames.SystemExceptionFullName);
-            Contract = GetTypeByMetadataName(WellKnownTypeNames.SystemDiagnosticContractsContract);
-            IDisposable = GetTypeByMetadataName(WellKnownTypeNames.SystemIDisposable);
-            Monitor = GetTypeByMetadataName(WellKnownTypeNames.SystemThreadingMonitor);
-            Interlocked = GetTypeByMetadataName(WellKnownTypeNames.SystemThreadingInterlocked);
-            Task = GetTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksTask);
-            GenericTask = GetTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksGenericTask);
-            CollectionTypes = GetWellKnownCollectionTypes();
-            SerializationInfo = GetTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationSerializationInfo);
-            GenericIEquatable = GetTypeByMetadataName(WellKnownTypeNames.SystemIEquatable1);
         }
 
         public static WellKnownTypeProvider GetOrCreate(Compilation compilation)
@@ -45,51 +34,6 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         public Compilation Compilation { get; }
 
         /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.Exception"/>
-        /// </summary>
-        public INamedTypeSymbol Exception { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for 'System.Diagnostics.Contracts.Contract' type. />
-        /// </summary>
-        public INamedTypeSymbol Contract { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.IDisposable"/>
-        /// </summary>
-        public INamedTypeSymbol IDisposable { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.Threading.Tasks.Task"/>
-        /// </summary>
-        public INamedTypeSymbol Task { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.Threading.Tasks.Task{TResult}"/>
-        /// </summary>
-        public INamedTypeSymbol GenericTask { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.Threading.Monitor"/>
-        /// </summary>
-        public INamedTypeSymbol Monitor { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.Threading.Interlocked"/>
-        /// </summary>
-        public INamedTypeSymbol Interlocked { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for 'System.Runtime.Serialization.SerializationInfo' type />
-        /// </summary>
-        public INamedTypeSymbol SerializationInfo { get; }
-
-        /// <summary>
-        /// <see cref="INamedTypeSymbol"/> for <see cref="System.IEquatable{T}"/>
-        /// </summary>
-        public INamedTypeSymbol GenericIEquatable { get; }
-
-        /// <summary>
         /// Mapping of full name to <see cref="INamedTypeSymbol"/>.
         /// </summary>
         private readonly ConcurrentDictionary<string, INamedTypeSymbol> _fullNameToTypeMap;
@@ -100,50 +44,69 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         /// <param name="fullTypeName">Namespace + type name, e.g. "System.Exception".</param>
         /// <param name="namedTypeSymbol">Named type symbol, if any.</param>
         /// <returns>True if found in the compilation, false otherwise.</returns>
-        public bool TryGetTypeByMetadataName(string fullTypeName, out INamedTypeSymbol namedTypeSymbol)
+        public bool TryGetOrCreateTypeByMetadataName(string fullTypeName, out INamedTypeSymbol namedTypeSymbol)
         {
             namedTypeSymbol = _fullNameToTypeMap.GetOrAdd(
                 fullTypeName,
-                (string s) => Compilation.GetTypeByMetadataName(s));    // Caching null results in our cache is intended.
+                fullyQualifiedMetadataName =>
+                {
+                    // Caching null results in our cache is intended.
+
+#pragma warning disable RS0030 // Do not used banned APIs
+                    // Use of Compilation.GetTypeByMetadataName is allowed here (this is our wrapper for it which
+                    // includes fallback handling for cases where GetTypeByMetadataName returns null).
+                    var type = Compilation.GetTypeByMetadataName(fullyQualifiedMetadataName);
+#pragma warning restore RS0030 // Do not used banned APIs
+
+                    type ??= Compilation.Assembly.GetTypeByMetadataName(fullyQualifiedMetadataName);
+                    if (type is null)
+                    {
+                        foreach (var module in Compilation.Assembly.Modules)
+                        {
+                            foreach (var referencedAssembly in module.ReferencedAssemblySymbols)
+                            {
+                                var currentType = referencedAssembly.GetTypeByMetadataName(fullyQualifiedMetadataName);
+                                if (currentType is null)
+                                {
+                                    continue;
+                                }
+
+                                switch (currentType.GetResultantVisibility())
+                                {
+                                    case SymbolVisibility.Public:
+                                    case SymbolVisibility.Internal when referencedAssembly.GivesAccessTo(Compilation.Assembly):
+                                        break;
+
+                                    default:
+                                        continue;
+                                }
+
+                                if (type is object)
+                                {
+                                    // Multiple visible types with the same metadata name are present.
+                                    return null;
+                                }
+
+                                type = currentType;
+                            }
+                        }
+                    }
+
+                    return type;
+                });
+
             return namedTypeSymbol != null;
         }
 
-        private INamedTypeSymbol GetTypeByMetadataName(string fullTypeName)
-        {
-            TryGetTypeByMetadataName(fullTypeName, out INamedTypeSymbol namedTypeSymbol);
-            return namedTypeSymbol;
-        }
-
         /// <summary>
-        /// Set containing following named types, if not null:
-        /// 1. <see cref="INamedTypeSymbol"/> for <see cref="System.Collections.ICollection"/>
-        /// 2. <see cref="INamedTypeSymbol"/> for <see cref="System.Collections.Generic.ICollection{T}"/>
-        /// 3. <see cref="INamedTypeSymbol"/> for <see cref="System.Collections.Generic.IReadOnlyCollection{T}"/>
+        /// Gets a type by its full type name.
         /// </summary>
-        public ImmutableHashSet<INamedTypeSymbol> CollectionTypes { get; }
-
-        private ImmutableHashSet<INamedTypeSymbol> GetWellKnownCollectionTypes()
+        /// <param name="fullTypeName">Namespace + type name, e.g. "System.Exception".</param>
+        /// <returns>The <see cref="INamedTypeSymbol"/> if found, null otherwise.</returns>
+        public INamedTypeSymbol GetOrCreateTypeByMetadataName(string fullTypeName)
         {
-            var builder = PooledHashSet<INamedTypeSymbol>.GetInstance();
-            var iCollection = GetTypeByMetadataName(WellKnownTypeNames.SystemCollectionsICollection);
-            if (iCollection != null)
-            {
-                builder.Add(iCollection);
-            }
-
-            var genericICollection = GetTypeByMetadataName(WellKnownTypeNames.SystemCollectionsGenericICollection1);
-            if (genericICollection != null)
-            {
-                builder.Add(genericICollection);
-            }
-
-            var genericIReadOnlyCollection = GetTypeByMetadataName(WellKnownTypeNames.SystemCollectionsGenericIReadOnlyCollection1);
-            if (genericIReadOnlyCollection != null)
-            {
-                builder.Add(genericIReadOnlyCollection);
-            }
-
-            return builder.ToImmutableAndFree();
+            TryGetOrCreateTypeByMetadataName(fullTypeName, out INamedTypeSymbol namedTypeSymbol);
+            return namedTypeSymbol;
         }
 
         /// <summary>
@@ -158,7 +121,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         {
             return typeSymbol != null
                 && typeSymbol.OriginalDefinition != null
-                && typeSymbol.OriginalDefinition.Equals(GenericTask)
+                && typeSymbol.OriginalDefinition.Equals(GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksGenericTask))
                 && typeSymbol is INamedTypeSymbol namedTypeSymbol
                 && namedTypeSymbol.TypeArguments.Length == 1
                 && typeArgumentPredicate(namedTypeSymbol.TypeArguments[0]);

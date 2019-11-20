@@ -58,6 +58,28 @@ namespace System.Security.Cryptography
 }";
 
         [Fact]
+        public void Test_HardcodedStaticReadonlyField__Diagnostic()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Security.Cryptography;
+
+internal static class Program
+{
+    private static readonly Byte[] _key = { 1, 2, 3 };
+
+    private static void Main()
+    {
+        using (var aes = Aes.Create())
+        {
+            aes.Key = Program._key;
+        }
+    }
+}");
+            // Ideally, we'd treat _key as hardcoded.
+        }
+
+        [Fact]
         public void Test_HardcodedInString_CreateEncryptor_NeedValueContentAnalysis_Diagnostic()
         {
             VerifyCSharp(@"
@@ -131,26 +153,6 @@ class TestClass
     }
 }",
             GetCSharpResultAt(11, 9, 9, 38, "ICryptoTransform SymmetricAlgorithm.CreateEncryptor(byte[] rgbKey, byte[] rgbIV)", "void TestClass.TestMethod(byte[] key, byte[] someOtherBytesForIV)", "string chars", "int ASCIIEncoding.GetBytes(string chars, int charIndex, int charCount, byte[] bytes, int byteIndex)"));
-        }
-
-        [Fact]
-        public void Test_ASCIIEncodingGetBytesWithCharArrayAndInt32AndInt32AndByteArrayAndInt32Parameters_CreateEncryptor_Diagnostic()
-        {
-            VerifyCSharp(@"
-using System.Text;
-using System.Security.Cryptography;
-
-class TestClass
-{
-    public void TestMethod(byte[] key, byte[] someOtherBytesForIV)
-    {
-        char[] chars = new char[] {'1', '2', '3'};
-        new ASCIIEncoding().GetBytes(chars, 0, 3, key, 0);
-        SymmetricAlgorithm rijn = SymmetricAlgorithm.Create();
-        rijn.CreateEncryptor(key, someOtherBytesForIV);
-    }
-}",
-            GetCSharpResultAt(12, 9, 9, 24, "ICryptoTransform SymmetricAlgorithm.CreateEncryptor(byte[] rgbKey, byte[] rgbIV)", "void TestClass.TestMethod(byte[] key, byte[] someOtherBytesForIV)", "char[]", "void TestClass.TestMethod(byte[] key, byte[] someOtherBytesForIV)"));
         }
 
         [Fact]
@@ -403,6 +405,26 @@ class TestClass
         }
 
         [Fact]
+        public void Test_HardcodedInByteArray_AesKey_Diagnostic()
+        {
+            VerifyCSharp(@"
+using System;
+using System.Security.Cryptography;
+
+class TestClass
+{
+    public void TestMethod()
+    {
+        using (var aes = Aes.Create())
+        {
+            aes.Key = new Byte[] { 1, 2, 3 };
+        }
+    }
+}",
+            GetCSharpResultAt(11, 13, 11, 23, "byte[] SymmetricAlgorithm.Key", "void TestClass.TestMethod()", "byte[]", "void TestClass.TestMethod()"));
+        }
+
+        [Fact]
         public void Test_HardcodedInByteArray_CreateEncryptor_Multivalues_Diagnostic()
         {
             VerifyCSharp(@"
@@ -619,6 +641,25 @@ class TestClass
 {
     public void TestMethod(char[] chars, byte[] key, byte[] someOtherBytesForIV)
     {
+        new ASCIIEncoding().GetBytes(chars, 0, 3, key, 0);
+        SymmetricAlgorithm rijn = SymmetricAlgorithm.Create();
+        rijn.CreateEncryptor(key, someOtherBytesForIV);
+    }
+}");
+        }
+
+        [Fact]
+        public void Test_ASCIIEncodingGetBytesWithConstantCharArrayAndInt32AndInt32AndByteArrayAndInt32Parameters_CreateEncryptor_NoDiagnostic()
+        {
+            VerifyCSharp(@"
+using System.Text;
+using System.Security.Cryptography;
+
+class TestClass
+{
+    public void TestMethod(byte[] key, byte[] someOtherBytesForIV)
+    {
+        char[] chars = new char[] {'1', '2', '3'};
         new ASCIIEncoding().GetBytes(chars, 0, 3, key, 0);
         SymmetricAlgorithm rijn = SymmetricAlgorithm.Create();
         rijn.CreateEncryptor(key, someOtherBytesForIV);

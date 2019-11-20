@@ -53,9 +53,9 @@ namespace Microsoft.NetCore.Analyzers.Runtime
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
-                INamedTypeSymbol localizableStateAttributeSymbol = WellKnownTypes.LocalizableAttribute(compilationContext.Compilation);
-                INamedTypeSymbol conditionalAttributeSymbol = WellKnownTypes.ConditionalAttribute(compilationContext.Compilation);
-                INamedTypeSymbol systemConsoleSymbol = WellKnownTypes.Console(compilationContext.Compilation);
+                INamedTypeSymbol localizableStateAttributeSymbol = compilationContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemComponentModelLocalizableAttribute);
+                INamedTypeSymbol conditionalAttributeSymbol = compilationContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemDiagnosticsConditionalAttribute);
+                INamedTypeSymbol systemConsoleSymbol = compilationContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemConsole);
                 ImmutableHashSet<INamedTypeSymbol> typesToIgnore = GetTypesToIgnore(compilationContext.Compilation);
 
                 compilationContext.RegisterOperationBlockStartAction(operationBlockStartContext =>
@@ -179,31 +179,31 @@ namespace Microsoft.NetCore.Analyzers.Runtime
         {
             var builder = PooledHashSet<INamedTypeSymbol>.GetInstance();
 
-            var xmlWriter = WellKnownTypes.XmlWriter(compilation);
+            var xmlWriter = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemXmlXmlWriter);
             if (xmlWriter != null)
             {
                 builder.Add(xmlWriter);
             }
 
-            var webUILiteralControl = WellKnownTypes.WebUILiteralControl(compilation);
+            var webUILiteralControl = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemWebUILiteralControl);
             if (webUILiteralControl != null)
             {
                 builder.Add(webUILiteralControl);
             }
 
-            var unitTestingAssert = WellKnownTypes.UnitTestingAssert(compilation);
+            var unitTestingAssert = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.MicrosoftVisualStudioTestToolsUnitTestingAssert);
             if (unitTestingAssert != null)
             {
                 builder.Add(unitTestingAssert);
             }
 
-            var unitTestingCollectionAssert = WellKnownTypes.UnitTestingCollectionAssert(compilation);
+            var unitTestingCollectionAssert = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.MicrosoftVisualStudioTestToolsUnitTestingCollectionAssert);
             if (unitTestingCollectionAssert != null)
             {
                 builder.Add(unitTestingCollectionAssert);
             }
 
-            var unitTestingCollectionStringAssert = WellKnownTypes.UnitTestingCollectionStringAssert(compilation);
+            var unitTestingCollectionStringAssert = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.MicrosoftVisualStudioTestToolsUnitTestingStringAssert);
             if (unitTestingCollectionStringAssert != null)
             {
                 builder.Add(unitTestingCollectionStringAssert);

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Immutable;
 using Analyzer.Utilities;
+using Analyzer.Utilities.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -56,7 +57,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                 (CompilationStartAnalysisContext compilationStartAnalysisContext) =>
                 {
                     INamedTypeSymbol cipherModeTypeSymbol =
-                        WellKnownTypes.SystemSecurityCryptographyCipherMode(compilationStartAnalysisContext.Compilation);
+                        compilationStartAnalysisContext.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemSecurityCryptographyCipherMode);
 
                     if (cipherModeTypeSymbol == null)
                     {
