@@ -44,6 +44,11 @@ namespace Analyzer.Utilities
             WriteEvent(8, target, cfgHashCode, analysisContextHashCode);
         }
 
+        public void EndAnalysisEntityMapMerge(string analysisAbstractValueType, int map1Count, int map2Count, int resultMapCount)
+        {
+            WriteEvent(9, analysisAbstractValueType, map1Count, map2Count, resultMapCount);
+        }
+
         public static readonly FcaEventSource Log = new FcaEventSource();
     }
 }

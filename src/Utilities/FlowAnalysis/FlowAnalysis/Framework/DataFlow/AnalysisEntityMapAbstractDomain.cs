@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Analyzer.Utilities;
 using Analyzer.Utilities.PooledObjects;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis;
 
@@ -206,6 +207,11 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             Debug.Assert(Compare(map1, resultMap) <= 0);
             Debug.Assert(Compare(map2, resultMap) <= 0);
             AssertValidAnalysisData(resultMap);
+
+            if (FcaEventSource.Log.IsEnabled())
+            {
+                FcaEventSource.Log.EndAnalysisEntityMapMerge(typeof(TValue).Name, map1.Count, map2.Count, resultMap.Count);
+            }
 
             return resultMap;
             static bool IsAnalysisEntityForFieldOrProperty(AnalysisEntity entity)
