@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Immutable;
-using System.Diagnostics;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Analyzer.Utilities;
@@ -21,8 +20,8 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             s_localizableTitleMissingAttribute,
             s_localizableMessageMissingAttribute,
             DiagnosticCategory.MicrosoftCodeAnalysisCorrectness,
-            DiagnosticHelpers.DefaultDiagnosticSeverity,
-            isEnabledByDefault: DiagnosticHelpers.EnabledByDefaultIfNotBuildingVSIX,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
             description: s_localizableDescriptionMissingAttribute,
             customTags: WellKnownDiagnosticTags.Telemetry);
 
@@ -35,8 +34,8 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             s_localizableTitleAddLanguageSupportToAnalyzer,
             s_localizableMessageAddLanguageSupportToAnalyzer,
             DiagnosticCategory.MicrosoftCodeAnalysisCorrectness,
-            DiagnosticHelpers.DefaultDiagnosticSeverity,
-            isEnabledByDefault: DiagnosticHelpers.EnabledByDefaultIfNotBuildingVSIX,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
             description: s_localizableDescriptionAddLanguageSupportToAnalyzer,
             customTags: WellKnownDiagnosticTags.Telemetry);
 
@@ -63,9 +62,9 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             private const string CSharpCompilationFullName = @"Microsoft.CodeAnalysis.CSharp.CSharpCompilation";
             private const string BasicCompilationFullName = @"Microsoft.CodeAnalysis.VisualBasic.VisualBasicCompilation";
 
-            private readonly INamedTypeSymbol _attributeUsageAttribute;
+            private readonly INamedTypeSymbol? _attributeUsageAttribute;
 
-            public AttributeAnalyzer(INamedTypeSymbol diagnosticAnalyzer, INamedTypeSymbol diagnosticAnalyzerAttribute, INamedTypeSymbol attributeUsageAttribute)
+            public AttributeAnalyzer(INamedTypeSymbol diagnosticAnalyzer, INamedTypeSymbol diagnosticAnalyzerAttribute, INamedTypeSymbol? attributeUsageAttribute)
                 : base(diagnosticAnalyzer, diagnosticAnalyzerAttribute)
             {
                 _attributeUsageAttribute = attributeUsageAttribute;
@@ -83,7 +82,7 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
                 // 2) AddLanguageSupportToAnalyzerRule: For analyzer supporting only one of C# or VB languages, detect if it can support the other language.
 
                 var hasAttribute = false;
-                SyntaxNode attributeSyntax = null;
+                SyntaxNode? attributeSyntax = null;
                 bool supportsCSharp = false;
                 bool supportsVB = false;
 
@@ -127,13 +126,13 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
                 }
                 else if (supportsCSharp ^ supportsVB)
                 {
-                    Debug.Assert(attributeSyntax != null);
+                    RoslynDebug.Assert(attributeSyntax != null);
 
                     // If the analyzer assembly doesn't reference either C# or VB CodeAnalysis assemblies,
                     // then the analyzer is pretty likely a language-agnostic analyzer.
                     Compilation compilation = symbolContext.Compilation;
                     string compilationTypeNameToCheck = supportsCSharp ? CSharpCompilationFullName : BasicCompilationFullName;
-                    INamedTypeSymbol compilationType = compilation.GetOrCreateTypeByMetadataName(compilationTypeNameToCheck);
+                    INamedTypeSymbol? compilationType = compilation.GetOrCreateTypeByMetadataName(compilationTypeNameToCheck);
                     if (compilationType == null)
                     {
                         string missingLanguage = supportsCSharp ? LanguageNames.VisualBasic : LanguageNames.CSharp;

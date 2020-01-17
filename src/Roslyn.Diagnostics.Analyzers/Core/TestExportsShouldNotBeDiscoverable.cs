@@ -29,7 +29,7 @@ namespace Roslyn.Diagnostics.Analyzers
             s_localizableTitle,
             s_localizableMessage,
             DiagnosticCategory.RoslyDiagnosticsReliability,
-            DiagnosticHelpers.DefaultDiagnosticSeverity,
+            DiagnosticSeverity.Warning,
             isEnabledByDefault: false,
             description: s_localizableDescription,
             helpLinkUri: null,
@@ -67,7 +67,7 @@ namespace Roslyn.Diagnostics.Analyzers
             });
         }
 
-        private static void AnalyzeSymbolForAttribute(ref SymbolAnalysisContext context, INamedTypeSymbol exportAttributeOpt, INamedTypeSymbol namedType, IEnumerable<AttributeData> exportAttributes, IEnumerable<AttributeData> namedTypeAttributes)
+        private static void AnalyzeSymbolForAttribute(ref SymbolAnalysisContext context, INamedTypeSymbol? exportAttributeOpt, INamedTypeSymbol namedType, IEnumerable<AttributeData> exportAttributes, IEnumerable<AttributeData> namedTypeAttributes)
         {
             if (exportAttributeOpt is null)
             {

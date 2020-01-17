@@ -32,8 +32,8 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             s_localizableTitle,
             s_localizableMessage,
             DiagnosticCategory.MicrosoftCodeAnalysisCorrectness,
-            DiagnosticHelpers.DefaultDiagnosticSeverity,
-            isEnabledByDefault: DiagnosticHelpers.EnabledByDefaultIfNotBuildingVSIX,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
             description: s_localizableDescription,
             customTags: WellKnownDiagnosticTags.Telemetry);
 
@@ -42,8 +42,8 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             s_localizableTitle,
             s_localizableIndirectMessage,
             DiagnosticCategory.MicrosoftCodeAnalysisCorrectness,
-            DiagnosticHelpers.DefaultDiagnosticSeverity,
-            isEnabledByDefault: DiagnosticHelpers.EnabledByDefaultIfNotBuildingVSIX,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
             description: s_localizableDescription,
             customTags: WellKnownDiagnosticTags.Telemetry);
 
@@ -63,7 +63,7 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
                     return;
                 }
 
-                INamedTypeSymbol diagnosticAnalyzer = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(DiagnosticAnalyzerCorrectnessAnalyzer.DiagnosticAnalyzerTypeFullName);
+                INamedTypeSymbol? diagnosticAnalyzer = compilationStartContext.Compilation.GetOrCreateTypeByMetadataName(DiagnosticAnalyzerCorrectnessAnalyzer.DiagnosticAnalyzerTypeFullName);
                 if (diagnosticAnalyzer == null)
                 {
                     // Does not contain any diagnostic analyzers.

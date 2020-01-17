@@ -26,8 +26,8 @@ namespace Roslyn.Diagnostics.Analyzers
                                                                              s_localizableTitle,
                                                                              s_localizableMessage,
                                                                              DiagnosticCategory.RoslyDiagnosticsReliability,
-                                                                             DiagnosticHelpers.DefaultDiagnosticSeverity,
-                                                                             isEnabledByDefault: DiagnosticHelpers.EnabledByDefaultIfNotBuildingVSIX,
+                                                                             DiagnosticSeverity.Warning,
+                                                                             isEnabledByDefault: true,
                                                                              description: s_localizableDescription,
                                                                              helpLinkUri: null,
                                                                              customTags: WellKnownDiagnosticTags.Telemetry);
@@ -56,7 +56,7 @@ namespace Roslyn.Diagnostics.Analyzers
             });
         }
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext symbolContext, IEnumerable<INamedTypeSymbol> exportAttributes, INamedTypeSymbol attributeUsageAttribute)
+        private static void AnalyzeSymbol(SymbolAnalysisContext symbolContext, IEnumerable<INamedTypeSymbol> exportAttributes, INamedTypeSymbol? attributeUsageAttribute)
         {
             var namedType = (INamedTypeSymbol)symbolContext.Symbol;
             var namedTypeAttributes = namedType.GetApplicableAttributes(attributeUsageAttribute);

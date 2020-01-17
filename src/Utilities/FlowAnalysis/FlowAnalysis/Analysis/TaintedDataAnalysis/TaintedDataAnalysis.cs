@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.FlowAnalysis;
@@ -9,22 +8,21 @@ using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.CopyAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
 {
-    using ValueContentAnalysisResult = DataFlowAnalysisResult<ValueContentBlockAnalysisResult, ValueContentAbstractValue>;
     using CopyAnalysisResult = DataFlowAnalysisResult<CopyBlockAnalysisResult, CopyAbstractValue>;
+    using ValueContentAnalysisResult = DataFlowAnalysisResult<ValueContentBlockAnalysisResult, ValueContentAbstractValue>;
 
     internal partial class TaintedDataAnalysis : ForwardDataFlowAnalysis<TaintedDataAnalysisData, TaintedDataAnalysisContext, TaintedDataAnalysisResult, TaintedDataBlockAnalysisResult, TaintedDataAbstractValue>
     {
-        private static readonly TaintedDataAnalysisDomain TaintedDataAnalysisDomainInstance = new TaintedDataAnalysisDomain(CoreTaintedDataAnalysisDataDomain.Instance);
-
-        private TaintedDataAnalysis(TaintedDataOperationVisitor operationVisitor)
-            : base(TaintedDataAnalysisDomainInstance, operationVisitor)
+        private TaintedDataAnalysis(TaintedDataAnalysisDomain analysisDomain, TaintedDataOperationVisitor operationVisitor)
+            : base(analysisDomain, operationVisitor)
         {
         }
 
-        internal static TaintedDataAnalysisResult TryGetOrComputeResult(
+        internal static TaintedDataAnalysisResult? TryGetOrComputeResult(
             ControlFlowGraph cfg,
             Compilation compilation,
             ISymbol containingMethod,
@@ -41,7 +39,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                 taintedSanitizerInfos, taintedSinkInfos, interproceduralAnalysisConfig);
         }
 
-        private static TaintedDataAnalysisResult TryGetOrComputeResult(
+        private static TaintedDataAnalysisResult? TryGetOrComputeResult(
             ControlFlowGraph cfg,
             Compilation compilation,
             ISymbol containingMethod,
@@ -57,32 +55,32 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                 return null;
             }
 
-            string logTarget = null;
+            string? logTarget = null;
             if (FcaEventSource.Log.IsEnabled())
             {
                 logTarget = containingMethod.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
                 FcaEventSource.Log.StartTaintedDataAnalysis(logTarget, cfg.GetHashCode());
             }
 
-            TaintedDataAnalysisContext analysisContext = null;
+            TaintedDataAnalysisContext? analysisContext = null;
             try
             {
                 WellKnownTypeProvider wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilation);
-                ValueContentAnalysisResult valueContentAnalysisResult = null;
-                CopyAnalysisResult copyAnalysisResult = null;
-                PointsToAnalysisResult pointsToAnalysisResult = null;
+                ValueContentAnalysisResult? valueContentAnalysisResult = null;
+                CopyAnalysisResult? copyAnalysisResult = null;
+                PointsToAnalysisResult? pointsToAnalysisResult = null;
                 if (taintedSourceInfos.RequiresValueContentAnalysis || taintedSanitizerInfos.RequiresValueContentAnalysis || taintedSinkInfos.RequiresValueContentAnalysis)
                 {
                     valueContentAnalysisResult = ValueContentAnalysis.TryGetOrComputeResult(
-                            cfg,
-                            containingMethod,
-                            analyzerOptions,
-                            wellKnownTypeProvider,
-                            interproceduralAnalysisConfig,
-                            out copyAnalysisResult,
-                            out pointsToAnalysisResult,
-                            pessimisticAnalysis: true,
-                            performCopyAnalysis: false);
+                        cfg,
+                        containingMethod,
+                        analyzerOptions,
+                        wellKnownTypeProvider,
+                        interproceduralAnalysisConfig,
+                        out copyAnalysisResult,
+                        out pointsToAnalysisResult,
+                        pessimisticAnalysis: true,
+                        performCopyAnalysis: false);
                     if (valueContentAnalysisResult == null)
                     {
                         return null;
@@ -91,18 +89,19 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                 else
                 {
                     pointsToAnalysisResult = PointsToAnalysis.TryGetOrComputeResult(
-                    cfg,
-                    containingMethod,
-                    analyzerOptions,
-                    wellKnownTypeProvider,
-                    interproceduralAnalysisConfig,
-                    interproceduralAnalysisPredicateOpt: null,
-                    pessimisticAnalysis: true,
-                    performCopyAnalysis: false);
+                        cfg,
+                        containingMethod,
+                        analyzerOptions,
+                        wellKnownTypeProvider,
+                        interproceduralAnalysisConfig,
+                        interproceduralAnalysisPredicateOpt: null,
+                        pessimisticAnalysis: true,
+                        performCopyAnalysis: false);
                     if (pointsToAnalysisResult == null)
                     {
                         return null;
                     }
+
                 }
 
                 analysisContext = TaintedDataAnalysisContext.Create(
@@ -127,15 +126,19 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
             {
                 if (FcaEventSource.Log.IsEnabled())
                 {
-                    FcaEventSource.Log.EndTaintedDataAnalysis(logTarget, cfg.GetHashCode(), analysisContext.GetHashCodeOrDefault());
+                    FcaEventSource.Log.EndTaintedDataAnalysis(
+                        logTarget,
+                        cfg.GetHashCode(),
+                        analysisContext.GetHashCodeOrDefault());
                 }
             }
         }
 
-        private static TaintedDataAnalysisResult TryGetOrComputeResultForAnalysisContext(TaintedDataAnalysisContext analysisContext)
+        private static TaintedDataAnalysisResult? TryGetOrComputeResultForAnalysisContext(TaintedDataAnalysisContext analysisContext)
         {
-            TaintedDataOperationVisitor visitor = new TaintedDataOperationVisitor(analysisContext);
-            TaintedDataAnalysis analysis = new TaintedDataAnalysis(visitor);
+            TaintedDataAnalysisDomain analysisDomain = new TaintedDataAnalysisDomain(new CoreTaintedDataAnalysisDataDomain(analysisContext.PointsToAnalysisResultOpt));
+            TaintedDataOperationVisitor visitor = new TaintedDataOperationVisitor(analysisDomain, analysisContext);
+            TaintedDataAnalysis analysis = new TaintedDataAnalysis(analysisDomain, visitor);
             return analysis.TryGetOrComputeResultCore(analysisContext, cacheResult: true);
         }
 

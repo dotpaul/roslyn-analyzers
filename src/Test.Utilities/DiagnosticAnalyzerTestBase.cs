@@ -1,10 +1,15 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+// Disable nullable in legacy test framework
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Analyzer.Utilities;
 using Analyzer.Utilities.Extensions;
 using Microsoft.CodeAnalysis;
@@ -79,12 +84,12 @@ namespace Test.Utilities
 
         protected static DiagnosticResult GetGlobalResult(string id, string message)
         {
-            return new DiagnosticResult(id, DiagnosticHelpers.DefaultDiagnosticSeverity).WithMessage(message);
+            return new DiagnosticResult(id, DiagnosticSeverity.Warning).WithMessage(message);
         }
 
         protected static DiagnosticResult GetGlobalResult(DiagnosticDescriptor rule, params string[] messageArguments)
         {
-            return new DiagnosticResult(rule).WithMessage(string.Format(rule.MessageFormat.ToString(), messageArguments));
+            return new DiagnosticResult(rule).WithMessage(string.Format(rule.MessageFormat.ToString(), messageArguments)).WithSeverity(rule.DefaultSeverity);
         }
 
         protected static DiagnosticResult GetBasicResultAt(int line, int column, string id, string message)
@@ -107,9 +112,9 @@ namespace Test.Utilities
             return GetResultAt(CSharpDefaultFilePath, line, column, id, message);
         }
 
-        protected static DiagnosticResult GetCSharpResultAt(string id, string message, params string[] locationStrings)
+        protected static DiagnosticResult GetCSharpResultAt(DiagnosticDescriptor rule, string[] messageArgs, params string[] locationStrings)
         {
-            return GetResultAt(CSharpDefaultFilePath, id, message, locationStrings);
+            return GetResultAt(CSharpDefaultFilePath, rule, messageArgs, locationStrings);
         }
 
         protected static DiagnosticResult GetCSharpResultAt(int line, int column, DiagnosticDescriptor rule, params object[] messageArguments)
@@ -124,12 +129,12 @@ namespace Test.Utilities
 
         private static DiagnosticResult GetResultAt(string path, int line, int column, string id, string message)
         {
-            return new DiagnosticResult(id, DiagnosticHelpers.DefaultDiagnosticSeverity).WithLocation(path, line, column).WithMessage(message);
+            return new DiagnosticResult(id, DiagnosticSeverity.Warning).WithLocation(path, line, column).WithMessage(message);
         }
 
-        protected static DiagnosticResult GetResultAt(string path, string id, string message, params string[] locationStrings)
+        protected static DiagnosticResult GetResultAt(string path, DiagnosticDescriptor rule, string[] messageArguments, params string[] locationStrings)
         {
-            var result = new DiagnosticResult(id, DiagnosticHelpers.DefaultDiagnosticSeverity).WithMessage(message);
+            var result = new DiagnosticResult(rule).WithArguments(messageArguments);
             foreach (var location in ParseResultLocations(path, locationStrings))
             {
                 result = result.WithLocation(location.path, location.location);
@@ -140,12 +145,12 @@ namespace Test.Utilities
 
         private static DiagnosticResult GetResultAt(string path, int line, int column, DiagnosticDescriptor rule, params object[] messageArguments)
         {
-            return new DiagnosticResult(rule).WithLocation(path, line, column).WithArguments(messageArguments);
+            return new DiagnosticResult(rule).WithLocation(path, line, column).WithArguments(messageArguments).WithSeverity(rule.DefaultSeverity);
         }
 
         private static DiagnosticResult GetResultAt(string path, IEnumerable<(int line, int column)> lineColumnPairs, DiagnosticDescriptor rule, params object[] messageArguments)
         {
-            DiagnosticResult result = new DiagnosticResult(rule).WithArguments(messageArguments);
+            DiagnosticResult result = new DiagnosticResult(rule).WithArguments(messageArguments).WithSeverity(rule.DefaultSeverity);
             foreach (var (line, column) in lineColumnPairs)
             {
                 result = result.WithLocation(path, line, column);
@@ -427,21 +432,17 @@ namespace Test.Utilities
 
             ProjectId projectId = ProjectId.CreateNewId(debugName: projectName);
 
+            var defaultReferences = ReferenceAssemblies.NetFramework.Net48.Default;
+            var references = Task.Run(() => defaultReferences.ResolveAsync(language, CancellationToken.None)).GetAwaiter().GetResult();
+
 #pragma warning disable CA2000 // Dispose objects before losing scope - Current solution/project takes the dispose ownership of the created AdhocWorkspace
             Project project = (addToSolution ?? new AdhocWorkspace().CurrentSolution)
 #pragma warning restore CA2000 // Dispose objects before losing scope
                 .AddProject(projectId, projectName, projectName, language)
-                .AddMetadataReference(projectId, MetadataReferences.CorlibReference)
-                .AddMetadataReference(projectId, MetadataReferences.SystemCoreReference)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemXmlReference)
-                .AddMetadataReference(projectId, MetadataReferences.CodeAnalysisReference)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemRuntimeFacadeRef)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemThreadingFacadeRef)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemThreadingTaskFacadeRef)
+                .AddMetadataReferences(projectId, references)
+                .AddMetadataReference(projectId, AdditionalMetadataReferences.CodeAnalysisReference)
                 .AddMetadataReference(projectId, AdditionalMetadataReferences.WorkspacesReference)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemDiagnosticsDebugReference)
                 .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemWebReference)
-                .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemXmlLinq)
                 .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemRuntimeSerialization)
                 .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemDirectoryServices)
                 .AddMetadataReference(projectId, AdditionalMetadataReferences.SystemXaml)
@@ -465,23 +466,17 @@ namespace Test.Utilities
 
             if ((referenceFlags & ReferenceFlags.RemoveImmutable) != ReferenceFlags.RemoveImmutable)
             {
-                project = project.AddMetadataReference(MetadataReferences.SystemCollectionsImmutableReference);
+                project = project.AddMetadataReference(AdditionalMetadataReferences.SystemCollectionsImmutableReference);
             }
 
             if ((referenceFlags & ReferenceFlags.RemoveSystemData) != ReferenceFlags.RemoveSystemData)
             {
-                project = project.AddMetadataReference(AdditionalMetadataReferences.SystemDataReference)
-                    .AddMetadataReference(AdditionalMetadataReferences.SystemXmlDataReference);
+                project = project.AddMetadataReference(AdditionalMetadataReferences.SystemXmlDataReference);
             }
 
             if ((referenceFlags & ReferenceFlags.AddTestReferenceAssembly) == ReferenceFlags.AddTestReferenceAssembly)
             {
                 project = project.AddMetadataReference(AdditionalMetadataReferences.TestReferenceAssembly);
-            }
-
-            if (language == LanguageNames.VisualBasic)
-            {
-                project = project.AddMetadataReference(MetadataReferences.MicrosoftVisualBasicReference);
             }
 
             int count = 0;
@@ -669,7 +664,7 @@ namespace Test.Utilities
                             .ToImmutableDictionary()));
         }
 
-        protected static FileAndSource GetEditorConfigAdditionalFile(string source)
+        public static FileAndSource GetEditorConfigAdditionalFile(string source)
             => new FileAndSource() { Source = source, FilePath = ".editorconfig" };
     }
 
