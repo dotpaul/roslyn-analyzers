@@ -6,17 +6,18 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Analyzer.Utilities;
 using Analyzer.Utilities.Extensions;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Microsoft.NetCore.Analyzers.Runtime
 {
     /// <summary>
     /// CA2201: Do not raise reserved exception types
-    /// 
+    ///
     /// Too generic:
     ///     System.Exception
     ///     System.ApplicationException
-    ///     System.SystemException 
-    ///     
+    ///     System.SystemException
+    ///
     /// Reserved:
     ///     System.OutOfMemoryException
     ///     System.IndexOutOfRangeException
@@ -27,11 +28,10 @@ namespace Microsoft.NetCore.Analyzers.Runtime
     ///     System.Runtime.InteropServices.COMException
     ///     System.Runtime.InteropServices.SEHException
     ///     System.AccessViolationException
-    ///     
+    ///
     /// </summary>
-    public abstract class DoNotRaiseReservedExceptionTypesAnalyzer<TLanguageKindEnum, TObjectCreationExpressionSyntax> : DiagnosticAnalyzer
-        where TLanguageKindEnum : struct
-        where TObjectCreationExpressionSyntax : SyntaxNode
+    [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
+    public sealed class DoNotRaiseReservedExceptionTypesAnalyzer : DiagnosticAnalyzer
     {
         internal const string RuleId = "CA2201";
 
@@ -77,10 +77,6 @@ namespace Microsoft.NetCore.Analyzers.Runtime
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(TooGenericRule, ReservedRule);
 
-        public abstract TLanguageKindEnum ObjectCreationExpressionKind { get; }
-
-        public abstract SyntaxNode GetTypeSyntaxNode(TObjectCreationExpressionSyntax node);
-
         public override void Initialize(AnalysisContext analysisContext)
         {
             analysisContext.EnableConcurrentExecution();
@@ -90,19 +86,16 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 compilationStartContext =>
                 {
                     ImmutableHashSet<INamedTypeSymbol> tooGenericExceptionSymbols = CreateSymbolSet(compilationStartContext.Compilation, s_tooGenericExceptions);
-                    ImmutableHashSet<INamedTypeSymbol> reservedExceptionSymbols = CreateSymbolSet(compilationStartContext.Compilation, s_reservedExceptions); ;
+                    ImmutableHashSet<INamedTypeSymbol> reservedExceptionSymbols = CreateSymbolSet(compilationStartContext.Compilation, s_reservedExceptions);
 
-                    if (tooGenericExceptionSymbols.Count == 0 && reservedExceptionSymbols.Count == 0)
+                    if (tooGenericExceptionSymbols.IsEmpty && reservedExceptionSymbols.IsEmpty)
                     {
                         return;
                     }
 
-                    compilationStartContext.RegisterSyntaxNodeAction(
-                    syntaxNodeContext =>
-                    {
-                        Analyze(syntaxNodeContext, tooGenericExceptionSymbols, reservedExceptionSymbols);
-                    },
-                    ObjectCreationExpressionKind);
+                    compilationStartContext.RegisterOperationAction(
+                        context => AnalyzeObjectCreation(context, tooGenericExceptionSymbols, reservedExceptionSymbols),
+                        OperationKind.ObjectCreation);
                 });
         }
 
@@ -126,27 +119,20 @@ namespace Microsoft.NetCore.Analyzers.Runtime
             return set != null ? set.ToImmutableHashSet() : ImmutableHashSet<INamedTypeSymbol>.Empty;
         }
 
-        private void Analyze(
-            SyntaxNodeAnalysisContext context,
+        private static void AnalyzeObjectCreation(
+            OperationAnalysisContext context,
             ImmutableHashSet<INamedTypeSymbol> tooGenericExceptionSymbols,
             ImmutableHashSet<INamedTypeSymbol> reservedExceptionSymbols)
         {
-            var objectCreationNode = (TObjectCreationExpressionSyntax)context.Node;
-            SyntaxNode targetType = GetTypeSyntaxNode(objectCreationNode);
-
-            // GetSymbolInfo().Symbol might return an error type symbol 
-            if (!(context.SemanticModel.GetSymbolInfo(targetType).Symbol is INamedTypeSymbol typeSymbol))
-            {
-                return;
-            }
-
+            var objectCreation = (IObjectCreationOperation)context.Operation;
+            var typeSymbol = objectCreation.Constructor.ContainingType;
             if (tooGenericExceptionSymbols.Contains(typeSymbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(TooGenericRule, targetType.GetLocation(), typeSymbol.ToDisplayString(s_symbolDisplayFormat)));
+                context.ReportDiagnostic(objectCreation.CreateDiagnostic(TooGenericRule, typeSymbol.ToDisplayString(s_symbolDisplayFormat)));
             }
             else if (reservedExceptionSymbols.Contains(typeSymbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(ReservedRule, targetType.GetLocation(), typeSymbol.ToDisplayString(s_symbolDisplayFormat)));
+                context.ReportDiagnostic(objectCreation.CreateDiagnostic(ReservedRule, typeSymbol.ToDisplayString(s_symbolDisplayFormat)));
             }
         }
     }

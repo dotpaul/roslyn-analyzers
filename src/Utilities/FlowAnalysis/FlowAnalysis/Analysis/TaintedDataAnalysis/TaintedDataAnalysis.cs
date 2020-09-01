@@ -34,7 +34,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
             CancellationToken cancellationToken)
         {
             var interproceduralAnalysisConfig = InterproceduralAnalysisConfiguration.Create(
-                analyzerOptions, rule, InterproceduralAnalysisKind.ContextSensitive, cancellationToken);
+                analyzerOptions, rule, containingMethod, compilation, InterproceduralAnalysisKind.ContextSensitive, cancellationToken);
             return TryGetOrComputeResult(cfg, compilation, containingMethod, analyzerOptions, taintedSourceInfos,
                 taintedSanitizerInfos, taintedSinkInfos, interproceduralAnalysisConfig);
         }
@@ -101,7 +101,6 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                     {
                         return null;
                     }
-
                 }
 
                 analysisContext = TaintedDataAnalysisContext.Create(
@@ -112,7 +111,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                     analyzerOptions,
                     interproceduralAnalysisConfig,
                     pessimisticAnalysis: false,
-                    copyAnalysisResultOpt: copyAnalysisResult,
+                    copyAnalysisResult: copyAnalysisResult,
                     pointsToAnalysisResult: pointsToAnalysisResult,
                     valueContentAnalysisResult: valueContentAnalysisResult,
                     tryGetOrComputeAnalysisResult: TryGetOrComputeResultForAnalysisContext,
@@ -136,7 +135,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
 
         private static TaintedDataAnalysisResult? TryGetOrComputeResultForAnalysisContext(TaintedDataAnalysisContext analysisContext)
         {
-            TaintedDataAnalysisDomain analysisDomain = new TaintedDataAnalysisDomain(new CoreTaintedDataAnalysisDataDomain(analysisContext.PointsToAnalysisResultOpt));
+            TaintedDataAnalysisDomain analysisDomain = new TaintedDataAnalysisDomain(new CoreTaintedDataAnalysisDataDomain(analysisContext.PointsToAnalysisResult));
             TaintedDataOperationVisitor visitor = new TaintedDataOperationVisitor(analysisDomain, analysisContext);
             TaintedDataAnalysis analysis = new TaintedDataAnalysis(analysisDomain, visitor);
             return analysis.TryGetOrComputeResultCore(analysisContext, cacheResult: true);

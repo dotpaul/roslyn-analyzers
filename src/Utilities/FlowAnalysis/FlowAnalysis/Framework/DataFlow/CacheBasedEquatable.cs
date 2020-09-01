@@ -7,6 +7,8 @@ using System.Linq;
 using Analyzer.Utilities;
 using Analyzer.Utilities.PooledObjects;
 
+#pragma warning disable CA2002
+
 namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 {
     /// <summary>
@@ -31,7 +33,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
                 if (_lazyHashCodeParts.IsDefault)
                 {
+#pragma warning disable CA2002 // Do not lock on objects with weak identity
                     lock (this)
+#pragma warning restore CA2002 // Do not lock on objects with weak identity
                     {
                         _lazyHashCode = hashCode;
                         _lazyHashCodeParts = hashCodeParts;

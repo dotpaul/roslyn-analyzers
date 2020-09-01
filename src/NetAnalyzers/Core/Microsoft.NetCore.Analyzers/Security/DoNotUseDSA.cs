@@ -33,7 +33,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                 s_Title,
                 s_Message,
                 DiagnosticCategory.Security,
-                RuleLevel.BuildWarning,
+                RuleLevel.IdeHidden_BulkConfigurable,
                 description: s_Description,
                 isPortedFxCopRule: false,
                 isDataflowRule: false);
@@ -132,7 +132,7 @@ namespace Microsoft.NetCore.Analyzers.Security
 
                     if (methodName == "Create" &&
                         typeSymbol.Equals(asymmetricAlgorithmTypeSymbol) &&
-                        arguments.Length > 0 &&
+                        !arguments.IsEmpty &&
                         arguments[0].Parameter.Type.SpecialType == SpecialType.System_String &&
                         arguments[0].Value.ConstantValue.HasValue)
                     {
@@ -148,7 +148,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                     }
                     else if (methodName == "CreateFromName" &&
                             typeSymbol.Equals(cryptoConfigTypeSymbol) &&
-                            arguments.Length > 0 &&
+                            !arguments.IsEmpty &&
                             arguments[0].Parameter.Type.SpecialType == SpecialType.System_String &&
                             arguments[0].Value.ConstantValue.HasValue)
                     {

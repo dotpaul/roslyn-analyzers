@@ -179,6 +179,8 @@ namespace Microsoft.NetCore.Analyzers.Security
                                         InterproceduralAnalysisConfiguration.Create(
                                             compilationAnalysisContext.Options,
                                             SupportedDiagnostics,
+                                            rootOperationsNeedingAnalysis.First().Item1.Syntax.SyntaxTree,
+                                            compilationAnalysisContext.Compilation,
                                             defaultInterproceduralAnalysisKind: InterproceduralAnalysisKind.ContextSensitive,
                                             cancellationToken: compilationAnalysisContext.CancellationToken));
                                 }
@@ -218,8 +220,8 @@ namespace Microsoft.NetCore.Analyzers.Security
                             }
                             finally
                             {
-                                rootOperationsNeedingAnalysis.Free();
-                                allResults?.Free();
+                                rootOperationsNeedingAnalysis.Free(compilationAnalysisContext.CancellationToken);
+                                allResults?.Free(compilationAnalysisContext.CancellationToken);
                             }
                         });
 

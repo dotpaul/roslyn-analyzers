@@ -49,7 +49,7 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
         {
             var methodSymbol = (IMethodSymbol)analysisContext.Symbol;
 
-            if (!methodSymbol.MatchesConfiguredVisibility(analysisContext.Options, Rule, analysisContext.CancellationToken) ||
+            if (!methodSymbol.MatchesConfiguredVisibility(analysisContext.Options, Rule, analysisContext.Compilation, analysisContext.CancellationToken) ||
                 !(methodSymbol.CanBeReferencedByName || methodSymbol.IsImplementationOfAnyExplicitInterfaceMember())
                 || !methodSymbol.Locations.Any(x => x.IsInSource)
                 || string.IsNullOrWhiteSpace(methodSymbol.Name))
@@ -63,7 +63,7 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
             }
 
             ImmutableArray<IMethodSymbol> originalDefinitions = GetOriginalDefinitions(methodSymbol);
-            if (originalDefinitions.Length == 0)
+            if (originalDefinitions.IsEmpty)
             {
                 // We did not find any original definitions so we don't have to do anything.
                 // This can happen when the method has an override modifier,
@@ -136,7 +136,7 @@ namespace Microsoft.CodeQuality.Analyzers.ApiDesignGuidelines
                 originalDefinitionsBuilder.Add(methodSymbol.OverriddenMethod);
             }
 
-            if (methodSymbol.ExplicitInterfaceImplementations.Length > 0)
+            if (!methodSymbol.ExplicitInterfaceImplementations.IsEmpty)
             {
                 originalDefinitionsBuilder.AddRange(methodSymbol.ExplicitInterfaceImplementations);
             }

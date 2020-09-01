@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers.Fixers
             return Task.CompletedTask;
         }
 
-        private async Task<Document> ConfigureGeneratedCodeAnalysisAsync(Document document, TextSpan sourceSpan, CancellationToken cancellationToken)
+        private static async Task<Document> ConfigureGeneratedCodeAnalysisAsync(Document document, TextSpan sourceSpan, CancellationToken cancellationToken)
         {
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             var generatedCodeAnalysisFlags = semanticModel.Compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.MicrosoftCodeAnalysisDiagnosticsGeneratedCodeAnalysisFlags);
@@ -53,30 +53,16 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers.Fixers
 
             var generator = SyntaxGenerator.GetGenerator(document);
 
-            var parameterDeclaration = analysisContextParameter;
-            var declarationKind = generator.GetDeclarationKind(parameterDeclaration);
-            while (declarationKind != DeclarationKind.Parameter)
+            var parameterDeclaration = generator.TryGetContainingDeclaration(analysisContextParameter, DeclarationKind.Parameter);
+            if (parameterDeclaration is null)
             {
-                parameterDeclaration = generator.GetDeclaration(parameterDeclaration.Parent);
-                if (parameterDeclaration is null)
-                {
-                    return document;
-                }
-
-                declarationKind = generator.GetDeclarationKind(parameterDeclaration);
+                return document;
             }
 
-            var methodDeclaration = parameterDeclaration.Parent;
-            declarationKind = generator.GetDeclarationKind(methodDeclaration);
-            while (declarationKind != DeclarationKind.Method)
+            var methodDeclaration = generator.TryGetContainingDeclaration(parameterDeclaration.Parent, DeclarationKind.Method);
+            if (methodDeclaration is null)
             {
-                methodDeclaration = generator.GetDeclaration(methodDeclaration.Parent);
-                if (methodDeclaration is null)
-                {
-                    return document;
-                }
-
-                declarationKind = generator.GetDeclarationKind(methodDeclaration);
+                return document;
             }
 
             var statements = generator.GetStatements(methodDeclaration);

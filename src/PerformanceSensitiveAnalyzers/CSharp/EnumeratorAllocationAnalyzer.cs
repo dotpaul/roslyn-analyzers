@@ -54,22 +54,22 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
 
                 // Regular way of getting the enumerator
                 ImmutableArray<ISymbol> enumerator = typeInfo.Type.GetMembers("GetEnumerator");
-                if ((enumerator == null || enumerator.Length == 0) && typeInfo.ConvertedType != null)
+                if ((enumerator == null || enumerator.IsEmpty) && typeInfo.ConvertedType != null)
                 {
                     // 1st we try and fallback to using the ConvertedType
                     enumerator = typeInfo.ConvertedType.GetMembers("GetEnumerator");
                 }
-                if ((enumerator == null || enumerator.Length == 0) && typeInfo.Type.Interfaces != null)
+                if ((enumerator == null || enumerator.IsEmpty) && typeInfo.Type.Interfaces != null)
                 {
                     // 2nd fallback, now we try and find the IEnumerable Interface explicitly
                     var iEnumerable = typeInfo.Type.Interfaces.Where(i => i.Name == "IEnumerable").ToImmutableArray();
-                    if (iEnumerable != null && iEnumerable.Length > 0)
+                    if (iEnumerable != null && !iEnumerable.IsEmpty)
                     {
                         enumerator = iEnumerable[0].GetMembers("GetEnumerator");
                     }
                 }
 
-                if (enumerator != null && enumerator.Length > 0)
+                if (enumerator != null && !enumerator.IsEmpty)
                 {
                     // probably should do something better here, hack.
                     if (enumerator[0] is IMethodSymbol methodSymbol)
@@ -93,7 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
                     {
                         foreach (var @interface in methodInfo.ReturnType.AllInterfaces)
                         {
-                            if (@interface.SpecialType == SpecialType.System_Collections_Generic_IEnumerator_T || @interface.SpecialType == SpecialType.System_Collections_IEnumerator)
+                            if (@interface.SpecialType is SpecialType.System_Collections_Generic_IEnumerator_T or SpecialType.System_Collections_IEnumerator)
                             {
                                 reportDiagnostic(Diagnostic.Create(ReferenceTypeEnumeratorRule, invocationExpression.GetLocation(), EmptyMessageArgs));
                             }
