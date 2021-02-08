@@ -32,7 +32,8 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
                                                                              RuleLevel.Disabled,    // Code coverage tools provide superior results when done correctly.
                                                                              description: s_localizableDescription,
                                                                              isPortedFxCopRule: true,
-                                                                             isDataflowRule: false);
+                                                                             isDataflowRule: false,
+                                                                             isReportedAtCompilationEnd: true);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -43,7 +44,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
 
             analysisContext.RegisterCompilationStartAction(startContext =>
             {
-                var instantiatedTypes = new ConcurrentDictionary<INamedTypeSymbol, object?>();
+                ConcurrentDictionary<INamedTypeSymbol, object?> instantiatedTypes = new ConcurrentDictionary<INamedTypeSymbol, object?>();
                 var internalTypes = new ConcurrentDictionary<INamedTypeSymbol, object?>();
 
                 var compilation = startContext.Compilation;
@@ -299,15 +300,15 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
         {
             // If this type doesn't live in an application assembly (.exe), it can't contain
             // the entry point.
-            if (compilation.Options.OutputKind != OutputKind.ConsoleApplication &&
-                compilation.Options.OutputKind != OutputKind.WindowsApplication &&
-                compilation.Options.OutputKind != OutputKind.WindowsRuntimeApplication)
+            if (compilation.Options.OutputKind is not OutputKind.ConsoleApplication and
+                not OutputKind.WindowsApplication and
+                not OutputKind.WindowsRuntimeApplication)
             {
                 return false;
             }
 
             var taskSymbol = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksTask);
-            var genericTaskSymbol = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksGenericTask);
+            var genericTaskSymbol = compilation.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksTask1);
 
             // TODO: Handle the case where Compilation.Options.MainTypeName matches this type.
             // TODO: Test: can't have type parameters.

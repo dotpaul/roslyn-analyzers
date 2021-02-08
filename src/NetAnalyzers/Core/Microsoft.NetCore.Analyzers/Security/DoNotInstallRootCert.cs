@@ -30,6 +30,7 @@ namespace Microsoft.NetCore.Analyzers.Security
             RuleLevel.Disabled,
             isPortedFxCopRule: false,
             isDataflowRule: true,
+            isReportedAtCompilationEnd: true,
             descriptionResourceStringName: nameof(MicrosoftNetCoreAnalyzersResources.DoNotInstallRootCertDescription));
         internal static DiagnosticDescriptor MaybeInstallRootCertRule = SecurityHelpers.CreateDiagnosticDescriptor(
             "CA5381",
@@ -39,13 +40,14 @@ namespace Microsoft.NetCore.Analyzers.Security
             RuleLevel.Disabled,
             isPortedFxCopRule: false,
             isDataflowRule: true,
+            isReportedAtCompilationEnd: true,
             descriptionResourceStringName: nameof(MicrosoftNetCoreAnalyzersResources.DoNotInstallRootCertDescription));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
                                                                                         DefinitelyInstallRootCertRule,
                                                                                         MaybeInstallRootCertRule);
 
-        private static readonly PropertyMapperCollection PropertyMappers = new PropertyMapperCollection(
+        private static readonly PropertyMapperCollection PropertyMappers = new(
             new PropertyMapper(
                 "...dummy name",    // There isn't *really* a property for what we're tracking; just the constructor argument.
                 (PointsToAbstractValue v) => PropertySetAbstractValueKind.Unknown));
@@ -94,7 +96,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                         {
                             var kind = PropertySetAbstractValueKind.Unflagged;
 
-                            if (constructorMethod.Parameters.Length > 0)
+                            if (!constructorMethod.Parameters.IsEmpty)
                             {
                                 if (constructorMethod.Parameters[0].Type.Equals(storeNameTypeSymbol))
                                 {
@@ -223,8 +225,8 @@ namespace Microsoft.NetCore.Analyzers.Security
                             }
                             finally
                             {
-                                rootOperationsNeedingAnalysis.Free();
-                                allResults?.Free();
+                                rootOperationsNeedingAnalysis.Free(compilationAnalysisContext.CancellationToken);
+                                allResults?.Free(compilationAnalysisContext.CancellationToken);
                             }
                         });
                 });

@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             "Microsoft.CodeAnalysis.CSharp.Workspaces",
             "Microsoft.CodeAnalysis.VisualBasic.Workspaces");
 
-        public static readonly DiagnosticDescriptor DoNotUseTypesFromAssemblyDirectRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor DoNotUseTypesFromAssemblyDirectRule = new(
             DiagnosticIds.DoNotUseTypesFromAssemblyRuleId,
             s_localizableTitle,
             s_localizableMessage,
@@ -35,9 +35,9 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: s_localizableDescription,
-            customTags: WellKnownDiagnosticTags.Telemetry);
+            customTags: WellKnownDiagnosticTagsExtensions.CompilationEndAndTelemetry);
 
-        public static readonly DiagnosticDescriptor DoNotUseTypesFromAssemblyIndirectRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor DoNotUseTypesFromAssemblyIndirectRule = new(
             DiagnosticIds.DoNotUseTypesFromAssemblyRuleId,
             s_localizableTitle,
             s_localizableIndirectMessage,
@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: s_localizableDescription,
-            customTags: WellKnownDiagnosticTags.Telemetry);
+            customTags: WellKnownDiagnosticTagsExtensions.CompilationEndAndTelemetry);
 
         protected abstract bool IsNamedTypeDeclarationBlock(SyntaxNode syntax);
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(DoNotUseTypesFromAssemblyDirectRule, DoNotUseTypesFromAssemblyIndirectRule);
@@ -177,7 +177,9 @@ namespace Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers
                 // GetSyntax for VB returns the StatementSyntax instead of BlockSyntax node.
                 syntax = syntax.FirstAncestorOrSelf<SyntaxNode>(node => IsNamedTypeDeclarationBlock(node), ascendOutOfTrivia: false) ?? syntax;
 
+#pragma warning disable RS1030 // Do not invoke Compilation.GetSemanticModel() method within a diagnostic analyzer
                 var semanticModel = compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030 // Do not invoke Compilation.GetSemanticModel() method within a diagnostic analyzer
                 var nodesToProcess = new Queue<(SyntaxNode node, bool inExecutableCode)>();
                 nodesToProcess.Enqueue((node: syntax, inExecutableCode: false));
 

@@ -19,7 +19,7 @@ using Microsoft.NetCore.Analyzers.Security.Helpers;
 namespace Microsoft.NetCore.Analyzers.Security
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
-    class DoNotDisableHttpClientCRLCheck : DiagnosticAnalyzer
+    internal class DoNotDisableHttpClientCRLCheck : DiagnosticAnalyzer
     {
         internal static DiagnosticDescriptor DefinitelyDisableHttpClientCRLCheckRule = SecurityHelpers.CreateDiagnosticDescriptor(
             "CA5399",
@@ -28,6 +28,7 @@ namespace Microsoft.NetCore.Analyzers.Security
             RuleLevel.Disabled,
             isPortedFxCopRule: false,
             isDataflowRule: true,
+            isReportedAtCompilationEnd: true,
             descriptionResourceStringName: nameof(MicrosoftNetCoreAnalyzersResources.DoNotDisableHttpClientCRLCheckDescription));
         internal static DiagnosticDescriptor MaybeDisableHttpClientCRLCheckRule = SecurityHelpers.CreateDiagnosticDescriptor(
             "CA5400",
@@ -36,6 +37,7 @@ namespace Microsoft.NetCore.Analyzers.Security
             RuleLevel.Disabled,
             isPortedFxCopRule: false,
             isDataflowRule: true,
+            isReportedAtCompilationEnd: true,
             descriptionResourceStringName: nameof(MicrosoftNetCoreAnalyzersResources.DoNotDisableHttpClientCRLCheckDescription));
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
@@ -53,13 +55,13 @@ namespace Microsoft.NetCore.Analyzers.Security
         /// </summary>
         private const int ServerCertificateValidationCallbackIndex = 1;
 
-        private static readonly ConstructorMapper ConstructorMapper = new ConstructorMapper(
+        private static readonly ConstructorMapper ConstructorMapper = new(
             (IMethodSymbol constructorMethod, IReadOnlyList<PointsToAbstractValue> argumentPointsToAbstractValues) =>
             {
                 return PropertySetAbstractValue.GetInstance(PropertySetAbstractValueKind.Flagged, PropertySetAbstractValueKind.Flagged);
             });
 
-        private static readonly PropertyMapperCollection PropertyMappers = new PropertyMapperCollection(
+        private static readonly PropertyMapperCollection PropertyMappers = new(
             new PropertyMapper(
                 "CheckCertificateRevocationList",
                 (ValueContentAbstractValue valueContentAbstractValue) =>
@@ -76,7 +78,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                 PropertySetCallbacks.FlagIfNull,
                 ServerCertificateValidationCallbackIndex));
 
-        private static readonly HazardousUsageEvaluatorCollection HazardousUsageEvaluators = new HazardousUsageEvaluatorCollection(
+        private static readonly HazardousUsageEvaluatorCollection HazardousUsageEvaluators = new(
             new HazardousUsageEvaluator(
                 WellKnownTypeNames.SystemNetHttpHttpClient,
                 ".ctor",
@@ -105,8 +107,7 @@ namespace Microsoft.NetCore.Analyzers.Security
 
         private static readonly ImmutableHashSet<string> typeToTrackMetadataNames = ImmutableHashSet.Create<string>(
             WellKnownTypeNames.SystemNetHttpWinHttpHandler,
-            WellKnownTypeNames.SystemNetHttpHttpClientHandler,
-            WellKnownTypeNames.SystemNetHttpCurlHandler);
+            WellKnownTypeNames.SystemNetHttpHttpClientHandler);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -159,7 +160,7 @@ namespace Microsoft.NetCore.Analyzers.Security
 
                                     if (objectCreationOperation.Type.GetBaseTypesAndThis().Contains(httpClientTypeSymbol))
                                     {
-                                        if (objectCreationOperation.Arguments.Length != 0)
+                                        if (!objectCreationOperation.Arguments.IsEmpty)
                                         {
                                             lock (rootOperationsNeedingAnalysis)
                                             {
@@ -236,8 +237,8 @@ namespace Microsoft.NetCore.Analyzers.Security
                             }
                             finally
                             {
-                                rootOperationsNeedingAnalysis.Free();
-                                allResults?.Free();
+                                rootOperationsNeedingAnalysis.Free(compilationAnalysisContext.CancellationToken);
+                                allResults?.Free(compilationAnalysisContext.CancellationToken);
                             }
                         });
                 });

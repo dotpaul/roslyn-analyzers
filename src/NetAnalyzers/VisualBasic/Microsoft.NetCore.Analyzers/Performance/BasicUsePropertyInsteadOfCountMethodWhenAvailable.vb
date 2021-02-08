@@ -55,13 +55,13 @@ Namespace Microsoft.NetCore.VisualBasic.Analyzers.Performance
 
                 Dim method = invocationOperation.TargetMethod
 
-                If invocationOperation.Arguments.Length = 0 AndAlso
+                If invocationOperation.Arguments.IsEmpty AndAlso
                     method.Name.Equals(NameOf(Enumerable.Count), StringComparison.Ordinal) AndAlso
                     Me.Context.IsEnumerableType(method.ContainingSymbol) Then
 
                     Dim convertionOperation = TryCast(invocationOperation.Instance, IConversionOperation)
 
-                    Return If(Not convertionOperation Is Nothing,
+                    Return If(convertionOperation IsNot Nothing,
                         convertionOperation.Operand.Type,
                         invocationOperation.Instance.Type)
 

@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis
         /// <summary>
         /// Operation visitor to flow the data values across a given statement in a basic block.
         /// </summary>
-        private sealed class ValueContentDataFlowOperationVisitor : AnalysisEntityDataFlowOperationVisitor<ValueContentAnalysisData, ValueContentAnalysisContext, ValueContentAnalysisResult, ValueContentAbstractValue>
+        private sealed class ValueContentDataFlowOperationVisitor : PredicateAnalysisEntityDataFlowOperationVisitor<ValueContentAnalysisData, ValueContentAnalysisContext, ValueContentAnalysisResult, ValueContentAbstractValue>
         {
             private readonly ValueContentAnalysisDomain _valueContentAnalysisDomain;
 
@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis
                 if (currentAssignedValue.IsLiteralState &&
                     AnalysisEntityFactory.TryCreate(target, out var targetEntity))
                 {
-                    if (CurrentAnalysisData.TryGetValue(targetEntity, out ValueContentAbstractValue existingTargetValue) &&
+                    if (CurrentAnalysisData.TryGetValue(targetEntity, out var existingTargetValue) &&
                         existingTargetValue.IsLiteralState)
                     {
                         var newValue = currentAssignedValue.IntersectLiteralValues(existingTargetValue);
@@ -145,9 +145,9 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis
             protected override ValueContentAnalysisData GetClonedAnalysisData(ValueContentAnalysisData analysisData)
                 => (ValueContentAnalysisData)analysisData.Clone();
             public override ValueContentAnalysisData GetEmptyAnalysisData()
-                => new ValueContentAnalysisData();
+                => new();
             protected override ValueContentAnalysisData GetExitBlockOutputData(ValueContentAnalysisResult analysisResult)
-                => new ValueContentAnalysisData(analysisResult.ExitBlockOutput.Data);
+                => new(analysisResult.ExitBlockOutput.Data);
             protected override void ApplyMissingCurrentAnalysisDataForUnhandledExceptionData(ValueContentAnalysisData dataAtException, ThrownExceptionInfo throwBranchWithExceptionType)
                 => ApplyMissingCurrentAnalysisDataForUnhandledExceptionData(dataAtException.CoreAnalysisData, CurrentAnalysisData.CoreAnalysisData, throwBranchWithExceptionType);
             protected override bool Equals(ValueContentAnalysisData value1, ValueContentAnalysisData value2)

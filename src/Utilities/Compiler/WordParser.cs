@@ -12,13 +12,13 @@ namespace Analyzer.Utilities
     /// </summary>
     internal class WordParser
     {
-        // WordParser has two distinct modes; one where it breaks up only words in 
-        // a given piece of text, and the other where it breaks up both words 
-        // and individual compounds within words in a piece of text. Passing 
-        // WordParserOptions.None to the constructor (or Parse) causes it to enter 
+        // WordParser has two distinct modes; one where it breaks up only words in
+        // a given piece of text, and the other where it breaks up both words
+        // and individual compounds within words in a piece of text. Passing
+        // WordParserOptions.None to the constructor (or Parse) causes it to enter
         // the former, and WordParserOptions.SplitCompoundWords the later.
         //
-        // If you simply want to iterate over the words, you can avoid the 
+        // If you simply want to iterate over the words, you can avoid the
         // allocation of a Collection<String> if you manually construct WordParser
         // and use the NextWord method instead of using the static Parse method.
         //
@@ -29,7 +29,7 @@ namespace Analyzer.Utilities
         // [letter]:    Represents any Unicode letter
         //
         // <words>      -> <prefix>(<word> | <notword>)+
-        // 
+        //
         // <notword>    -> !<word>
         //
         // <prefix>     -> [char]
@@ -60,7 +60,7 @@ namespace Analyzer.Utilities
         ///     Initializes a new instance of the <see cref="WordParser"/> class with the specified text and options.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to parse.
+        ///     A <see cref="string"/> containing the text to parse.
         /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
@@ -79,13 +79,13 @@ namespace Analyzer.Utilities
         ///     Initializes a new instance of the <see cref="WordParser"/> class with the specified text, options and prefix.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to parse.
+        ///     A <see cref="string"/> containing the text to parse.
         /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
         /// </param>
         /// <param name="prefix">
-        ///     A <see cref="Char"/> representing an optional prefix of <paramref name="text"/>, that if present,
+        ///     A <see cref="char"/> representing an optional prefix of <paramref name="text"/>, that if present,
         ///     will be returned as a separate token.
         /// </param>
         /// <exception cref="ArgumentNullException">
@@ -96,9 +96,9 @@ namespace Analyzer.Utilities
         /// </exception>
         public WordParser(string text, WordParserOptions options, char prefix)
         {
-            if (options < WordParserOptions.None || options > (WordParserOptions.IgnoreMnemonicsIndicators | WordParserOptions.SplitCompoundWords))
+            if (options is < WordParserOptions.None or > (WordParserOptions.IgnoreMnemonicsIndicators | WordParserOptions.SplitCompoundWords))
             {
-                throw new ArgumentException($"'{nameof(options)}' ({((int)options).ToString()}) is invalid for Enum type'{typeof(WordParserOptions).Name}'");
+                throw new ArgumentException($"'{nameof(options)}' ({(int)options}) is invalid for Enum type'{nameof(WordParserOptions)}'");
             }
 
             _text = text ?? throw new ArgumentNullException(nameof(text));
@@ -117,7 +117,7 @@ namespace Analyzer.Utilities
         ///     Returns the words contained in the specified text, delimiting based on the specified options.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to parse.
+        ///     A <see cref="string"/> containing the text to parse.
         /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
@@ -140,13 +140,13 @@ namespace Analyzer.Utilities
         ///     Returns the words contained in the specified text, delimiting based on the specified options.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to parse.
+        ///     A <see cref="string"/> containing the text to parse.
         /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
         /// </param>
         /// <param name="prefix">
-        ///     A <see cref="Char"/> representing an optional prefix of <paramref name="text"/>, that if present,
+        ///     A <see cref="char"/> representing an optional prefix of <paramref name="text"/>, that if present,
         ///     will be returned as a separate token.
         /// </param>
         /// <returns>
@@ -176,13 +176,13 @@ namespace Analyzer.Utilities
         ///     Returns a value indicating whether at least one of the specified words occurs, using a case-insensitive ordinal comparison, within the specified text.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to check.
-        /// </param>    
+        ///     A <see cref="string"/> containing the text to check.
+        /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
         /// </param>
         /// <param name="words">
-        ///     A <see cref="String"/> array containing the words to seek.
+        ///     A <see cref="string"/> array containing the words to seek.
         /// </param>
         /// <returns>
         ///     <see langword="true"/> if at least one of the elements within <paramref name="words"/> occurs within <paramref name="text"/>, otherwise, <see langword="false"/>.
@@ -190,7 +190,7 @@ namespace Analyzer.Utilities
         /// <exception cref="ArgumentNullException">
         ///     <paramref name="text"/> is <see langword="null"/>.
         ///     <para>
-        ///      -or-  
+        ///      -or-
         ///     </para>
         ///     <paramref name="words"/> is <see langword="null"/>.
         /// </exception>
@@ -206,17 +206,17 @@ namespace Analyzer.Utilities
         ///     Returns a value indicating whether at least one of the specified words occurs, using a case-insensitive ordinal comparison, within the specified text.
         /// </summary>
         /// <param name="text">
-        ///     A <see cref="String"/> containing the text to check.
-        /// </param>    
+        ///     A <see cref="string"/> containing the text to check.
+        /// </param>
         /// <param name="options">
         ///     One or more of the <see cref="WordParserOptions"/> specifying parsing and delimiting options.
         /// </param>
         /// <param name="prefix">
-        ///     A <see cref="Char"/> representing an optional prefix of <paramref name="text"/>, that if present,
+        ///     A <see cref="char"/> representing an optional prefix of <paramref name="text"/>, that if present,
         ///     will be returned as a separate token.
         /// </param>
         /// <param name="words">
-        ///     A <see cref="String"/> array containing the words to seek.
+        ///     A <see cref="string"/> array containing the words to seek.
         /// </param>
         /// <returns>
         ///     <see langword="true"/> if at least one of the elements within <paramref name="words"/> occurs within <paramref name="text"/>, otherwise, <see langword="false"/>.
@@ -224,7 +224,7 @@ namespace Analyzer.Utilities
         /// <exception cref="ArgumentNullException">
         ///     <paramref name="text"/> is <see langword="null"/>.
         ///     <para>
-        ///      -or-  
+        ///      -or-
         ///     </para>
         ///     <paramref name="words"/> is <see langword="null"/>.
         /// </exception>
@@ -259,7 +259,7 @@ namespace Analyzer.Utilities
         ///     Returns the next word in the text.
         /// </summary>
         /// <returns>
-        ///     A <see cref="String"/> containing the next word or <see langword="null"/> if there are no more words.
+        ///     A <see cref="string"/> containing the next word or <see langword="null"/> if there are no more words.
         /// </returns>
         public string? NextWord()
         {
@@ -277,7 +277,7 @@ namespace Analyzer.Utilities
         ///     Returns the next word in the text without consuming it.
         /// </summary>
         /// <returns>
-        ///     A <see cref="String"/> containing the next word or <see langword="null"/> if there are no more words.
+        ///     A <see cref="string"/> containing the next word or <see langword="null"/> if there are no more words.
         /// </returns>
         public string? PeekWord()
         {
@@ -505,7 +505,7 @@ namespace Analyzer.Utilities
         }
 
         private void ParseWithoutCase()
-        {   // Parses letters without any concept of case, 
+        {   // Parses letters without any concept of case,
             // ie Japanese
 
             char c;
@@ -536,7 +536,7 @@ namespace Analyzer.Utilities
                 c = Peek();
             }
 
-            // Reject the final uppercase letter (and trailing 's') 
+            // Reject the final uppercase letter (and trailing 's')
             // if they are followed by a lower case letter.
             while (IsLower(c))
             {
@@ -606,13 +606,13 @@ namespace Analyzer.Utilities
         }
 
         private bool IsIgnored(char c)
-        {   // TODO: We should extend this to handle 'real' mnemonics, 
-            // instead of just blindly skipping all ampersands and 
-            // underscores.For example, '&&OK' should really be 
+        {   // TODO: We should extend this to handle 'real' mnemonics,
+            // instead of just blindly skipping all ampersands and
+            // underscores.For example, '&&OK' should really be
             // interpreted as '&OK', instead of 'OK'.
             if (SkipMnemonics)
             {
-                return c == '&' || c == '_';
+                return c is '&' or '_';
             }
 
             return false;
@@ -650,40 +650,22 @@ namespace Analyzer.Utilities
 
         private static bool IsHexDigit(char c)
         {
-            switch (c)
+            return c switch
             {
-                case 'A':
-                case 'a':
-                case 'B':
-                case 'b':
-                case 'C':
-                case 'c':
-                case 'D':
-                case 'd':
-                case 'E':
-                case 'e':
-                case 'F':
-                case 'f':
-                    return true;
-            }
-
-            return IsDigit(c);
+                'A' or 'a' or 'B' or 'b' or 'C' or 'c' or 'D' or 'd' or 'E' or 'e' or 'F' or 'f' => true,
+                _ => IsDigit(c),
+            };
         }
 
         private static bool IsIntraWordPunctuation(char c)
         {   // Don't be tempted to add En dash and Em dash to this
             // list, as these should be treated as word delimiters.
 
-            switch (c)
+            return c switch
             {
-                case '-':
-                case '\u00AD': // Soft hyphen
-                case '\'':
-                case '\u2019': // Right Single Quotation Mark
-                    return true;
-            }
-
-            return false;
+                '-' or '\u00AD' or '\'' or '\u2019' => true,
+                _ => false,
+            };
         }
     }
 }

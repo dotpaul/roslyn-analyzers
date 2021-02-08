@@ -70,7 +70,7 @@ namespace Analyzer.Utilities.Extensions
                    method.IsOverride &&
                    method.Name == WellKnownMemberNames.ObjectGetHashCode &&
                    method.ReturnType.SpecialType == SpecialType.System_Int32 &&
-                   method.Parameters.Length == 0 &&
+                   method.Parameters.IsEmpty &&
                    IsObjectMethodOverride(method);
         }
 
@@ -83,7 +83,7 @@ namespace Analyzer.Utilities.Extensions
                    method.IsOverride &&
                    method.ReturnType.SpecialType == SpecialType.System_String &&
                    method.Name == WellKnownMemberNames.ObjectToString &&
-                   method.Parameters.Length == 0 &&
+                   method.Parameters.IsEmpty &&
                    IsObjectMethodOverride(method);
         }
 
@@ -116,7 +116,7 @@ namespace Analyzer.Utilities.Extensions
                 return true; // for C#
             }
 
-            if (method.Name != WellKnownMemberNames.DestructorName || method.Parameters.Length != 0 || !method.ReturnsVoid)
+            if (method.Name != WellKnownMemberNames.DestructorName || !method.Parameters.IsEmpty || !method.ReturnsVoid)
             {
                 return false;
             }
@@ -180,7 +180,7 @@ namespace Analyzer.Utilities.Extensions
             // Identify the implementor of IDisposable.Dispose in the given method's containing type and check
             // if it is the given method.
             return method.ReturnsVoid &&
-                method.Parameters.Length == 0 &&
+                method.Parameters.IsEmpty &&
                 method.IsImplementationOfInterfaceMethod(null, iDisposable, "Dispose");
         }
 
@@ -236,7 +236,7 @@ namespace Analyzer.Utilities.Extensions
         /// <summary>
         /// Checks if the given method has the signature "override Task DisposeCoreAsync(bool)".
         /// </summary>
-        private static bool HasOverriddenDisposeCoreAsyncMethodSignature(this IMethodSymbol method, [NotNullWhen(returnValue: true)]  INamedTypeSymbol? task)
+        private static bool HasOverriddenDisposeCoreAsyncMethodSignature(this IMethodSymbol method, [NotNullWhen(returnValue: true)] INamedTypeSymbol? task)
         {
             return method.Name == "DisposeCoreAsync" &&
                 method.MethodKind == MethodKind.Ordinary &&
@@ -343,8 +343,8 @@ namespace Analyzer.Utilities.Extensions
         /// </summary>
         public static bool IsPropertyAccessor(this IMethodSymbol method)
         {
-            return method.MethodKind == MethodKind.PropertyGet ||
-                   method.MethodKind == MethodKind.PropertySet;
+            return method.MethodKind is MethodKind.PropertyGet or
+                   MethodKind.PropertySet;
         }
 
         /// <summary>
@@ -352,14 +352,14 @@ namespace Analyzer.Utilities.Extensions
         /// </summary>
         public static bool IsEventAccessor(this IMethodSymbol method)
         {
-            return method.MethodKind == MethodKind.EventAdd ||
-                   method.MethodKind == MethodKind.EventRaise ||
-                   method.MethodKind == MethodKind.EventRemove;
+            return method.MethodKind is MethodKind.EventAdd or
+                   MethodKind.EventRaise or
+                   MethodKind.EventRemove;
         }
 
         public static bool IsOperator(this IMethodSymbol methodSymbol)
         {
-            return methodSymbol.MethodKind == MethodKind.UserDefinedOperator || methodSymbol.MethodKind == MethodKind.BuiltinOperator;
+            return methodSymbol.MethodKind is MethodKind.UserDefinedOperator or MethodKind.BuiltinOperator;
         }
 
         public static bool HasOptionalParameters(this IMethodSymbol methodSymbol)
@@ -445,7 +445,7 @@ namespace Analyzer.Utilities.Extensions
         /// </summary>
         /// <remarks>Also see <see cref="IOperationExtensions.s_operationToCfgCache"/></remarks>
         private static readonly BoundedCache<Compilation, ConcurrentDictionary<IMethodSymbol, IBlockOperation?>> s_methodToTopmostOperationBlockCache
-            = new BoundedCache<Compilation, ConcurrentDictionary<IMethodSymbol, IBlockOperation?>>();
+            = new();
 
         /// <summary>
         /// Returns the topmost <see cref="IBlockOperation"/> for given <paramref name="method"/>.
@@ -492,29 +492,20 @@ namespace Analyzer.Utilities.Extensions
 
         public static bool IsLambdaOrLocalFunctionOrDelegate(this IMethodSymbol method)
         {
-            switch (method.MethodKind)
+            return method.MethodKind switch
             {
-                case MethodKind.LambdaMethod:
-                case MethodKindEx.LocalFunction:
-                case MethodKind.DelegateInvoke:
-                    return true;
-
-                default:
-                    return false;
-            }
+                MethodKind.LambdaMethod or MethodKindEx.LocalFunction or MethodKind.DelegateInvoke => true,
+                _ => false,
+            };
         }
 
         public static bool IsLambdaOrLocalFunction(this IMethodSymbol method)
         {
-            switch (method.MethodKind)
+            return method.MethodKind switch
             {
-                case MethodKind.LambdaMethod:
-                case MethodKindEx.LocalFunction:
-                    return true;
-
-                default:
-                    return false;
-            }
+                MethodKind.LambdaMethod or MethodKindEx.LocalFunction => true,
+                _ => false,
+            };
         }
 
         public static int GetParameterIndex(this IMethodSymbol methodSymbol, IParameterSymbol parameterSymbol)
@@ -547,7 +538,7 @@ namespace Analyzer.Utilities.Extensions
             return method.Name == "Enter" &&
                    method.ContainingType.Equals(systemThreadingMonitor) &&
                    method.ReturnsVoid &&
-                   method.Parameters.Length >= 1 &&
+                   !method.Parameters.IsEmpty &&
                    method.Parameters[0].Type.SpecialType == SpecialType.System_Object;
         }
 

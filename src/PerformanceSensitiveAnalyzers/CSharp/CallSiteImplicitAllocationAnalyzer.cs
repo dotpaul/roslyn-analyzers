@@ -23,8 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
         private static readonly LocalizableString s_localizableValueTypeNonOverridenCallRuleTitle = new LocalizableResourceString(nameof(AnalyzersResources.ValueTypeNonOverridenCallRuleTitle), AnalyzersResources.ResourceManager, typeof(AnalyzersResources));
         private static readonly LocalizableString s_localizableValueTypeNonOverridenCallRuleMessage = new LocalizableResourceString(nameof(AnalyzersResources.ValueTypeNonOverridenCallRuleMessage), AnalyzersResources.ResourceManager, typeof(AnalyzersResources));
 
-
-        internal static DiagnosticDescriptor ParamsParameterRule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor ParamsParameterRule = new(
             ParamsParameterRuleId,
             s_localizableParamsParameterRuleTitle,
             s_localizableParamsParameterRuleMessage,
@@ -32,7 +31,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
-        internal static DiagnosticDescriptor ValueTypeNonOverridenCallRule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor ValueTypeNonOverridenCallRule = new(
             ValueTypeNonOverridenCallRuleId,
             s_localizableValueTypeNonOverridenCallRuleTitle,
             s_localizableValueTypeNonOverridenCallRuleMessage,
@@ -62,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
                     CheckNonOverridenMethodOnStruct(methodInfo, reportDiagnostic, invocationExpression);
                 }
 
-                if (methodInfo.Parameters.Length > 0 && invocationExpression.ArgumentList != null)
+                if (!methodInfo.Parameters.IsEmpty && invocationExpression.ArgumentList != null)
                 {
                     var lastParam = methodInfo.Parameters[methodInfo.Parameters.Length - 1];
                     if (lastParam.IsParams)

@@ -55,7 +55,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
             return Task.CompletedTask;
         }
 
-        private async Task<Document> UseCollectionDirectly(Document document, TextSpan span, CancellationToken cancellationToken)
+        private static async Task<Document> UseCollectionDirectly(Document document, TextSpan span, CancellationToken cancellationToken)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var invocationNode = root.FindNode(span, getInnermostNodeForTie: true);
@@ -65,7 +65,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
             }
 
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-            if (!(semanticModel.GetOperation(invocationNode, cancellationToken) is IInvocationOperation invocationOperation))
+            if (semanticModel.GetOperation(invocationNode, cancellationToken) is not IInvocationOperation invocationOperation)
             {
                 return document;
             }

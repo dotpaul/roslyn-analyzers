@@ -32,7 +32,8 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                                                                              RuleLevel.Disabled,
                                                                              description: s_localizableDescription,
                                                                              isPortedFxCopRule: true,
-                                                                             isDataflowRule: true);
+                                                                             isDataflowRule: true,
+                                                                             isReportedAtCompilationEnd: true);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -53,6 +54,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 {
                     Debug.Assert(!field.IsStatic);
                     Debug.Assert(disposeAnalysisHelper!.IsDisposable(field.Type));
+                    RoslynDebug.Assert(fieldDisposeValueMap != null);
 
                     fieldDisposeValueMap.AddOrUpdate(field,
                         addValue: disposed,
@@ -62,10 +64,12 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 var hasErrors = false;
                 compilationContext.RegisterOperationAction(_ => hasErrors = true, OperationKind.Invalid);
 
+                Compilation compilation = compilationContext.Compilation;
+
                 // Disposable fields with initializer at declaration must be disposed.
                 compilationContext.RegisterOperationAction(operationContext =>
                 {
-                    if (!ShouldAnalyze(operationContext.ContainingSymbol.ContainingType))
+                    if (!ShouldAnalyze(operationContext.ContainingSymbol.ContainingType, operationContext.Options, operationContext.CancellationToken))
                     {
                         return;
                     }
@@ -85,8 +89,8 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 // Instance fields initialized in constructor/method body with a locally created disposable object must be disposed.
                 compilationContext.RegisterOperationBlockStartAction(operationBlockStartContext =>
                 {
-                    if (!(operationBlockStartContext.OwningSymbol is IMethodSymbol containingMethod) ||
-                        !ShouldAnalyze(containingMethod.ContainingType))
+                    if (operationBlockStartContext.OwningSymbol is not IMethodSymbol containingMethod ||
+                        !ShouldAnalyze(containingMethod.ContainingType, operationBlockStartContext.Options, operationBlockStartContext.CancellationToken))
                     {
                         return;
                     }
@@ -131,7 +135,9 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                                     var interproceduralAnalysisConfig = InterproceduralAnalysisConfiguration.Create(
                                         operationBlockStartContext.Options, Rule, InterproceduralAnalysisKind.None, operationBlockStartContext.CancellationToken);
                                     var pointsToAnalysisResult = PointsToAnalysis.TryGetOrComputeResult(cfg,
-                                        containingMethod, operationBlockStartContext.Options, wellKnownTypeProvider, interproceduralAnalysisConfig,
+                                        containingMethod, operationBlockStartContext.Options, wellKnownTypeProvider,
+                                        PointsToAnalysisKind.PartialWithoutTrackingFieldsAndProperties,
+                                        interproceduralAnalysisConfig,
                                         interproceduralAnalysisPredicateOpt: null,
                                         pessimisticAnalysis: false, performCopyAnalysis: false);
                                     if (pointsToAnalysisResult == null)
@@ -164,7 +170,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                         if (!disposableFields.IsEmpty)
                         {
                             if (disposeAnalysisHelper.TryGetOrComputeResult(operationBlockStartContext.OperationBlocks, containingMethod,
-                                operationBlockStartContext.Options, Rule, trackInstanceFields: true, trackExceptionPaths: false, cancellationToken: operationBlockStartContext.CancellationToken,
+                                operationBlockStartContext.Options, Rule, PointsToAnalysisKind.Complete, trackInstanceFields: true, trackExceptionPaths: false, cancellationToken: operationBlockStartContext.CancellationToken,
                                 disposeAnalysisResult: out var disposeAnalysisResult, pointsToAnalysisResult: out var pointsToAnalysisResult))
                             {
                                 RoslynDebug.Assert(disposeAnalysisResult.TrackedInstanceFieldPointsToMap != null);
@@ -235,14 +241,14 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 return;
 
                 // Local functions
-                bool ShouldAnalyze(INamedTypeSymbol namedType)
+                bool ShouldAnalyze(INamedTypeSymbol namedType, AnalyzerOptions options, CancellationToken cancellationToken)
                 {
                     // We only want to analyze types which are disposable (implement System.IDisposable directly or indirectly)
                     // and have at least one disposable field.
                     return !hasErrors &&
                         disposeAnalysisHelper!.IsDisposable(namedType) &&
                         !disposeAnalysisHelper.GetDisposableFields(namedType).IsEmpty &&
-                        !namedType.IsConfiguredToSkipAnalysis(compilationContext.Options, Rule, compilationContext.Compilation, compilationContext.CancellationToken);
+                        !namedType.IsConfiguredToSkipAnalysis(options, Rule, compilation, cancellationToken);
                 }
 
                 bool IsDisposeMethod(IMethodSymbol method)

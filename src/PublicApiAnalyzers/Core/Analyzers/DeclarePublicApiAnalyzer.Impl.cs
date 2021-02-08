@@ -69,8 +69,8 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers
 
             private readonly Compilation _compilation;
             private readonly ApiData _unshippedData;
-            private readonly ConcurrentDictionary<ITypeSymbol, bool> _typeCanBeExtendedCache = new ConcurrentDictionary<ITypeSymbol, bool>();
-            private readonly ConcurrentDictionary<string, UnusedValue> _visitedApiList = new ConcurrentDictionary<string, UnusedValue>(StringComparer.Ordinal);
+            private readonly ConcurrentDictionary<ITypeSymbol, bool> _typeCanBeExtendedCache = new();
+            private readonly ConcurrentDictionary<string, UnusedValue> _visitedApiList = new(StringComparer.Ordinal);
             private readonly IReadOnlyDictionary<string, ApiLine> _publicApiMap;
 
             internal Impl(Compilation compilation, ApiData shippedData, ApiData unshippedData)
@@ -421,21 +421,21 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers
                 string publicApiName = symbol.ToDisplayString(s_publicApiFormat);
 
                 ITypeSymbol? memberType = null;
-                if (symbol is IMethodSymbol)
+                if (symbol is IMethodSymbol method)
                 {
-                    memberType = ((IMethodSymbol)symbol).ReturnType;
+                    memberType = method.ReturnType;
                 }
-                else if (symbol is IPropertySymbol)
+                else if (symbol is IPropertySymbol property)
                 {
-                    memberType = ((IPropertySymbol)symbol).Type;
+                    memberType = property.Type;
                 }
-                else if (symbol is IEventSymbol)
+                else if (symbol is IEventSymbol @event)
                 {
-                    memberType = ((IEventSymbol)symbol).Type;
+                    memberType = @event.Type;
                 }
-                else if (symbol is IFieldSymbol)
+                else if (symbol is IFieldSymbol field)
                 {
-                    memberType = ((IFieldSymbol)symbol).Type;
+                    memberType = field.Type;
                 }
 
                 if (memberType != null)
@@ -580,21 +580,16 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers
 
             private bool IsPublicApiCore(ISymbol symbol)
             {
-                switch (symbol.DeclaredAccessibility)
+                return symbol.DeclaredAccessibility switch
                 {
-                    case Accessibility.Public:
-                        return symbol.ContainingType == null || IsPublicApiCore(symbol.ContainingType);
-                    case Accessibility.Protected:
-                    case Accessibility.ProtectedOrInternal:
-                        // Protected symbols must have parent types (that is, top-level protected
-                        // symbols are not allowed.
-                        return
-                            symbol.ContainingType != null &&
-                            IsPublicApiCore(symbol.ContainingType) &&
-                            CanTypeBeExtendedPublicly(symbol.ContainingType);
-                    default:
-                        return false;
-                }
+                    Accessibility.Public => symbol.ContainingType == null || IsPublicApiCore(symbol.ContainingType),
+                    Accessibility.Protected
+                    or Accessibility.ProtectedOrInternal => symbol.ContainingType != null
+                        && IsPublicApiCore(symbol.ContainingType)
+                        && CanTypeBeExtendedPublicly(symbol.ContainingType),// Protected symbols must have parent types (that is, top-level protected
+                                                                            // symbols are not allowed.
+                    _ => false,
+                };
             }
 
             private bool CanTypeBeExtendedPublicly(ITypeSymbol type)
@@ -608,7 +603,7 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers
                 // not internal, private or protected&internal
                 return !type.IsSealed &&
                     type.GetMembers(WellKnownMemberNames.InstanceConstructorName).Any(
-                        m => m.DeclaredAccessibility != Accessibility.Internal && m.DeclaredAccessibility != Accessibility.Private && m.DeclaredAccessibility != Accessibility.ProtectedAndInternal
+                        m => m.DeclaredAccessibility is not Accessibility.Internal and not Accessibility.Private and not Accessibility.ProtectedAndInternal
                     );
             }
         }

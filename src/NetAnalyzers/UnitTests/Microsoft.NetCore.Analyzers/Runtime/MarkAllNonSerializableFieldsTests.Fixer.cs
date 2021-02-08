@@ -4,11 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
 using Microsoft.CodeAnalysis.VisualBasic.Testing;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.NetCore.CSharp.Analyzers.Runtime;
 using Microsoft.NetCore.VisualBasic.Analyzers.Runtime;
-using Test.Utilities;
 using Xunit;
 using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
     Microsoft.NetCore.Analyzers.Runtime.SerializationRulesDiagnosticAnalyzer,
@@ -90,7 +87,9 @@ public class CA2235WithNonPublicNonSerializableFields
 {
     internal NonSerializableType s1;
 }",
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
 
             await new VisualBasicCodeFixTest<SerializationRulesDiagnosticAnalyzer, BasicMarkAllNonSerializableFieldsFixer, XUnitVerifier>
@@ -115,7 +114,9 @@ End Class
 Public Class CA2235WithNonPublicNonSerializableFields
     Friend s1 As NonSerializableType
 End Class",
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
         }
 
@@ -192,7 +193,9 @@ public class CA2235WithNonPublicNonSerializableFields
 {
     internal NonSerializableType s1;
 }",
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
 
             await new VisualBasicCodeFixTest<SerializationRulesDiagnosticAnalyzer, BasicMarkAllNonSerializableFieldsFixer, XUnitVerifier>
@@ -227,7 +230,9 @@ End Class
 Public Class CA2235WithNonPublicNonSerializableFields
     Friend s1 As NonSerializableType
 End Class",
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
         }
     }

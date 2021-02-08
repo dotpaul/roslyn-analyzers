@@ -79,29 +79,11 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                 }
             }
 
-            public ImmutableDictionary<(Location Location, IMethodSymbol? Method), HazardousUsageEvaluationResult> HazardousUsages
-            {
-                get
-                {
-                    return this._hazardousUsageBuilder.ToImmutable();
-                }
-            }
+            public ImmutableDictionary<(Location Location, IMethodSymbol? Method), HazardousUsageEvaluationResult> HazardousUsages => this._hazardousUsageBuilder.ToImmutable();
 
-            public ImmutableHashSet<IMethodSymbol> VisitedLocalFunctions
-            {
-                get
-                {
-                    return this._visitedLocalFunctions.ToImmutable();
-                }
-            }
+            public ImmutableHashSet<IMethodSymbol> VisitedLocalFunctions => this._visitedLocalFunctions.ToImmutable();
 
-            public ImmutableHashSet<IFlowAnonymousFunctionOperation> VisitedLambdas
-            {
-                get
-                {
-                    return this._visitedLambdas.ToImmutable();
-                }
-            }
+            public ImmutableHashSet<IFlowAnonymousFunctionOperation> VisitedLambdas => this._visitedLambdas.ToImmutable();
 
             protected override PropertySetAbstractValue GetAbstractDefaultValue(ITypeSymbol type) => ValueDomain.Bottom;
 
@@ -170,41 +152,28 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                     }
                     else if (constructorMapper.MapFromPointsToAbstractValue != null)
                     {
-                        ArrayBuilder<PointsToAbstractValue> builder = ArrayBuilder<PointsToAbstractValue>.GetInstance();
-                        try
-                        {
-                            foreach (IArgumentOperation argumentOperation in operation.Arguments)
-                            {
-                                builder.Add(this.GetPointsToAbstractValue(argumentOperation));
-                            }
+                        using ArrayBuilder<PointsToAbstractValue> builder = ArrayBuilder<PointsToAbstractValue>.GetInstance();
 
-                            abstractValue = constructorMapper.MapFromPointsToAbstractValue(operation.Constructor, builder);
-                        }
-                        finally
+                        foreach (IArgumentOperation argumentOperation in operation.Arguments)
                         {
-                            builder.Free();
+                            builder.Add(this.GetPointsToAbstractValue(argumentOperation));
                         }
+
+                        abstractValue = constructorMapper.MapFromPointsToAbstractValue(operation.Constructor, builder);
                     }
                     else if (constructorMapper.MapFromValueContentAbstractValue != null)
                     {
                         Debug.Assert(this.DataFlowAnalysisContext.ValueContentAnalysisResultOpt != null);
-                        ArrayBuilder<PointsToAbstractValue> pointsToBuilder = ArrayBuilder<PointsToAbstractValue>.GetInstance();
-                        ArrayBuilder<ValueContentAbstractValue> valueContentBuilder = ArrayBuilder<ValueContentAbstractValue>.GetInstance();
-                        try
-                        {
-                            foreach (IArgumentOperation argumentOperation in operation.Arguments)
-                            {
-                                pointsToBuilder.Add(this.GetPointsToAbstractValue(argumentOperation));
-                                valueContentBuilder.Add(this.GetValueContentAbstractValue(argumentOperation.Value));
-                            }
+                        using ArrayBuilder<PointsToAbstractValue> pointsToBuilder = ArrayBuilder<PointsToAbstractValue>.GetInstance();
+                        using ArrayBuilder<ValueContentAbstractValue> valueContentBuilder = ArrayBuilder<ValueContentAbstractValue>.GetInstance();
 
-                            abstractValue = constructorMapper.MapFromValueContentAbstractValue(operation.Constructor, valueContentBuilder, pointsToBuilder);
-                        }
-                        finally
+                        foreach (IArgumentOperation argumentOperation in operation.Arguments)
                         {
-                            pointsToBuilder.Free();
-                            valueContentBuilder.Free();
+                            pointsToBuilder.Add(this.GetPointsToAbstractValue(argumentOperation));
+                            valueContentBuilder.Add(this.GetValueContentAbstractValue(argumentOperation.Value));
                         }
+
+                        abstractValue = constructorMapper.MapFromValueContentAbstractValue(operation.Constructor, valueContentBuilder, pointsToBuilder);
                     }
                     else
                     {
@@ -279,8 +248,8 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                                 trackedAssignmentData.TrackAssignmentWithAbstractLocation(operation, abstractLocation);
                             }
                         }
-                        else if (pointsToAbstractValue.Kind == PointsToAbstractValueKind.Unknown
-                            || pointsToAbstractValue.Kind == PointsToAbstractValueKind.UnknownNotNull)
+                        else if (pointsToAbstractValue.Kind is PointsToAbstractValueKind.Unknown
+                            or PointsToAbstractValueKind.UnknownNotNull)
                         {
                             trackedAssignmentData.TrackAssignmentWithUnknownLocation(operation);
                         }
@@ -430,8 +399,8 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                                 Debug.Fail("Expected to have tracked assignment operations with locations");
                             }
                         }
-                        else if (pointsToAbstractValue.Kind == PointsToAbstractValueKind.Unknown
-                                 || pointsToAbstractValue.Kind == PointsToAbstractValueKind.UnknownNotNull)
+                        else if (pointsToAbstractValue.Kind is PointsToAbstractValueKind.Unknown
+                                 or PointsToAbstractValueKind.UnknownNotNull)
                         {
                             if (kvp.Value.AssignmentsWithUnknownLocation != null)
                             {
@@ -470,7 +439,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                         trackedAssignmentData.Free();
                     }
 
-                    this.TrackedFieldPropertyAssignmentsOpt.Free();
+                    this.TrackedFieldPropertyAssignmentsOpt.Dispose();
                     this.TrackedFieldPropertyAssignmentsOpt = null;
                 }
             }
@@ -531,7 +500,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
             /// <param name="visitedArguments">IArgumentOperations of this invocation.</param>
             /// <param name="evaluator">Target evaluator.</param>
             /// <param name="instance">The tracked argument.</param>
-            bool TryFindNonTrackedTypeHazardousUsageEvaluator(
+            private bool TryFindNonTrackedTypeHazardousUsageEvaluator(
                 IMethodSymbol method,
                 ImmutableArray<IArgumentOperation> visitedArguments,
                 [NotNullWhen(returnValue: true)] out HazardousUsageEvaluator? evaluator,
@@ -570,7 +539,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.PropertySetAnalysis
                 }
                 finally
                 {
-                    hazardousUsageTypeNames?.Free();
+                    hazardousUsageTypeNames?.Dispose();
                 }
 
                 return false;

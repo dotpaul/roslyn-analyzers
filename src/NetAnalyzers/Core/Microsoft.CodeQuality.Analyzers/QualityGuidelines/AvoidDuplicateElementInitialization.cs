@@ -54,7 +54,7 @@ namespace Microsoft.CodeQuality.Analyzers.QualityGuidelines
             {
                 if (objectInitializer.Initializer.Initializers[i] is ISimpleAssignmentOperation assignment &&
                     assignment.Target is IPropertyReferenceOperation propertyReference &&
-                    propertyReference.Arguments.Length != 0)
+                    !propertyReference.Arguments.IsEmpty)
                 {
                     var values = GetConstantArgumentValues(propertyReference.Arguments);
                     if (!values.IsEmpty && !initializedElementIndexes.Add(values))
@@ -91,7 +91,7 @@ namespace Microsoft.CodeQuality.Analyzers.QualityGuidelines
 
         private sealed class ConstantArgumentEqualityComparer : IEqualityComparer<ImmutableArray<object>>
         {
-            public static readonly ConstantArgumentEqualityComparer Instance = new ConstantArgumentEqualityComparer();
+            public static readonly ConstantArgumentEqualityComparer Instance = new();
 
             private readonly EqualityComparer<object> _objectComparer = EqualityComparer<object>.Default;
 

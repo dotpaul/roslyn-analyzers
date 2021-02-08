@@ -83,10 +83,10 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
         public AnalysisEntity ThisOrMeInstance { get; }
 
-        private ImmutableArray<AbstractIndex> CreateAbstractIndices<T>(ImmutableArray<T> indices)
+        private static ImmutableArray<AbstractIndex> CreateAbstractIndices<T>(ImmutableArray<T> indices)
             where T : IOperation
         {
-            if (indices.Length > 0)
+            if (!indices.IsEmpty)
             {
                 var builder = ArrayBuilder<AbstractIndex>.GetInstance(indices.Length);
                 foreach (var index in indices)
@@ -243,7 +243,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             return analysisEntity != null;
         }
 
-        private void GetSymbolAndIndicesForMemberReference(IMemberReferenceOperation memberReference, ref ISymbol? symbolOpt, ref ImmutableArray<AbstractIndex> indices)
+        private static void GetSymbolAndIndicesForMemberReference(IMemberReferenceOperation memberReference, ref ISymbol? symbolOpt, ref ImmutableArray<AbstractIndex> indices)
         {
             switch (memberReference)
             {
@@ -268,12 +268,12 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     // 1) Indexers
                     // 2) Read-only properties.
                     // 3) Properties with a backing field (auto-generated properties)
-                    if (propertyReference.Arguments.Length > 0 ||
+                    if (!propertyReference.Arguments.IsEmpty ||
                         propertyReference.Property.IsReadOnly ||
                         propertyReference.Property.IsPropertyWithBackingField())
                     {
                         symbolOpt = propertyReference.Property;
-                        indices = propertyReference.Arguments.Length > 0 ?
+                        indices = !propertyReference.Arguments.IsEmpty ?
                             CreateAbstractIndices(propertyReference.Arguments.Select(a => a.Value).ToImmutableArray()) :
                             ImmutableArray<AbstractIndex>.Empty;
                     }
@@ -283,7 +283,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
         public bool TryCreateForSymbolDeclaration(ISymbol symbol, [NotNullWhen(returnValue: true)] out AnalysisEntity? analysisEntity)
         {
-            Debug.Assert(symbol.Kind == SymbolKind.Local || symbol.Kind == SymbolKind.Parameter || symbol.Kind == SymbolKind.Field || symbol.Kind == SymbolKind.Property);
+            Debug.Assert(symbol.Kind is SymbolKind.Local or SymbolKind.Parameter or SymbolKind.Field or SymbolKind.Property);
 
             var indices = ImmutableArray<AbstractIndex>.Empty;
             IOperation? instance = null;
@@ -342,14 +342,13 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
                 Debug.Assert(parentEntity.InstanceLocation == instanceLocation);
 
-                var builder = ArrayBuilder<AnalysisEntity>.GetInstance(tupleType.TupleElements.Length);
+                using var builder = ArrayBuilder<AnalysisEntity>.GetInstance(tupleType.TupleElements.Length);
                 foreach (var field in tupleType.TupleElements)
                 {
                     var tupleFieldName = field.CorrespondingTupleField.Name;
                     var mappedValueTupleField = underlyingValueTupleType.GetMembers(tupleFieldName).OfType<IFieldSymbol>().FirstOrDefault();
                     if (mappedValueTupleField == null)
                     {
-                        builder.Free();
                         return false;
                     }
 
@@ -357,7 +356,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                         type: mappedValueTupleField.Type, instanceLocation, parentEntity));
                 }
 
-                elementEntities = builder.ToImmutableAndFree();
+                elementEntities = builder.ToImmutable();
                 return true;
             }
             finally

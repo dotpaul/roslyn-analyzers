@@ -73,7 +73,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
         internal static DiagnosticDescriptor ObjectCreationRule = DiagnosticDescriptorHelper.Create(RuleId,
                                                                              s_localizableTitle,
                                                                              s_localizableMessageObjectCreation,
-                                                                             DiagnosticCategory.Usage,
+                                                                             DiagnosticCategory.Performance,
                                                                              RuleLevel.IdeSuggestion,
                                                                              description: s_localizableDescription,
                                                                              isPortedFxCopRule: true,
@@ -131,7 +131,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
 
                 compilationContext.RegisterOperationBlockStartAction(osContext =>
                 {
-                    if (!(osContext.OwningSymbol is IMethodSymbol method))
+                    if (osContext.OwningSymbol is not IMethodSymbol method)
                     {
                         return;
                     }
@@ -153,7 +153,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
                                 break;
 
                             case OperationKind.Invocation:
-                                IInvocationOperation invocationExpression = ((IInvocationOperation)expression);
+                                IInvocationOperation invocationExpression = (IInvocationOperation)expression;
                                 IMethodSymbol targetMethod = invocationExpression.TargetMethod;
                                 if (targetMethod == null)
                                 {
@@ -234,7 +234,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
             }
 
             // Get the enclosing block.
-            if (!(operationContext.Operation.Parent is IBlockOperation enclosingBlock))
+            if (operationContext.Operation.Parent is not IBlockOperation enclosingBlock)
             {
                 return false;
             }

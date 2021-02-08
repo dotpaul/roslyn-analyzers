@@ -33,13 +33,13 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
             ImmutableArray<CodeAnalysisMetricData> children)
         {
             Debug.Assert(
-                symbol.Kind == SymbolKind.Assembly ||
-                symbol.Kind == SymbolKind.Namespace ||
-                symbol.Kind == SymbolKind.NamedType ||
-                symbol.Kind == SymbolKind.Method ||
-                symbol.Kind == SymbolKind.Field ||
-                symbol.Kind == SymbolKind.Event ||
-                symbol.Kind == SymbolKind.Property);
+                symbol.Kind is SymbolKind.Assembly or
+                SymbolKind.Namespace or
+                SymbolKind.NamedType or
+                SymbolKind.Method or
+                SymbolKind.Field or
+                SymbolKind.Event or
+                SymbolKind.Property);
             Debug.Assert(depthOfInheritance.HasValue == (symbol.Kind == SymbolKind.Assembly || symbol.Kind == SymbolKind.Namespace || symbol.Kind == SymbolKind.NamedType));
 
             var executableLines = !computationalComplexityMetrics.IsDefault ?
@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
             }
 
             builder.Append($"{symbolName}: (Lines: {SourceLines}, ExecutableLines: {ExecutableLines}, MntIndex: {MaintainabilityIndex}, CycCxty: {CyclomaticComplexity}");
-            if (CoupledNamedTypes.Count > 0)
+            if (!CoupledNamedTypes.IsEmpty)
             {
                 var coupledNamedTypesStr = string.Join(", ", CoupledNamedTypes.Select(t => t.ToDisplayString()).OrderBy(n => n));
                 builder.Append($", CoupledTypes: {{{coupledNamedTypesStr}}}");
@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
             return ComputeAsync(symbol, semanticModelProvider, cancellationToken);
         }
 
-        internal async static Task<CodeAnalysisMetricData> ComputeAsync(ISymbol symbol, SemanticModelProvider semanticModelProvider, CancellationToken cancellationToken)
+        internal static async Task<CodeAnalysisMetricData> ComputeAsync(ISymbol symbol, SemanticModelProvider semanticModelProvider, CancellationToken cancellationToken)
         {
             return symbol.Kind switch
             {

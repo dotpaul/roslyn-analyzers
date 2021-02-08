@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
         internal static int NormalizeAndRoundMaintainabilityIndex(double maintIndex)
         {
             maintIndex = Math.Max(0.0, maintIndex);
-            return RoundMetricValue((maintIndex / 171.0) * 100.0);
+            return RoundMetricValue(maintIndex / 171.0 * 100.0);
         }
 
         internal static void AddCoupledNamedTypes(ImmutableHashSet<INamedTypeSymbol>.Builder builder, IEnumerable<ITypeSymbol> coupledTypes)
@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
                 if (symbol.Kind == SymbolKind.Namespace)
                 {
                     var model = semanticModelProvider.GetSemanticModel(declSyntax);
-                    if (model.GetDeclaredSymbol(declSyntax, cancellationToken) != (object)symbol)
+                    if (!Equals(model.GetDeclaredSymbol(declSyntax, cancellationToken), symbol))
                     {
                         continue;
                     }
@@ -280,31 +280,28 @@ namespace Microsoft.CodeAnalysis.CodeMetrics
             // Compat
             static bool isIgnoreableType(INamedTypeSymbol namedType)
             {
-                switch (namedType.SpecialType)
+                return namedType.SpecialType switch
                 {
-                    case SpecialType.System_Boolean:
-                    case SpecialType.System_Byte:
-                    case SpecialType.System_Char:
-                    case SpecialType.System_Double:
-                    case SpecialType.System_Int16:
-                    case SpecialType.System_Int32:
-                    case SpecialType.System_Int64:
-                    case SpecialType.System_UInt16:
-                    case SpecialType.System_UInt32:
-                    case SpecialType.System_UInt64:
-                    case SpecialType.System_IntPtr:
-                    case SpecialType.System_UIntPtr:
-                    case SpecialType.System_SByte:
-                    case SpecialType.System_Single:
-                    case SpecialType.System_String:
-                    case SpecialType.System_Object:
-                    case SpecialType.System_ValueType:
-                    case SpecialType.System_Void:
-                        return true;
-
-                    default:
-                        return false;
-                }
+                    SpecialType.System_Boolean
+                    or SpecialType.System_Byte
+                    or SpecialType.System_Char
+                    or SpecialType.System_Double
+                    or SpecialType.System_Int16
+                    or SpecialType.System_Int32
+                    or SpecialType.System_Int64
+                    or SpecialType.System_UInt16
+                    or SpecialType.System_UInt32
+                    or SpecialType.System_UInt64
+                    or SpecialType.System_IntPtr
+                    or SpecialType.System_UIntPtr
+                    or SpecialType.System_SByte
+                    or SpecialType.System_Single
+                    or SpecialType.System_String
+                    or SpecialType.System_Object
+                    or SpecialType.System_ValueType
+                    or SpecialType.System_Void => true,
+                    _ => false,
+                };
             }
         }
 

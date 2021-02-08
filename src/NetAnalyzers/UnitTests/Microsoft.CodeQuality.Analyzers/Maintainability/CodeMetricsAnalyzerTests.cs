@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using Analyzer.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -732,7 +731,7 @@ CA 1501: 10
 
         private const string AdditionalFileName = "CodeMetricsConfig.txt";
         private FileAndSource GetAdditionalFile(string source)
-            => new FileAndSource() { Source = source, FilePath = AdditionalFileName };
+            => new() { Source = source, FilePath = AdditionalFileName };
 
         #endregion
     }

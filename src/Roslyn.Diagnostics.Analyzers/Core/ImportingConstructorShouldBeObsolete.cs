@@ -25,7 +25,7 @@ namespace Roslyn.Diagnostics.Analyzers
         private static readonly LocalizableString s_localizableMessage = new LocalizableResourceString(nameof(RoslynDiagnosticsAnalyzersResources.ImportingConstructorShouldBeObsoleteMessage), RoslynDiagnosticsAnalyzersResources.ResourceManager, typeof(RoslynDiagnosticsAnalyzersResources));
         private static readonly LocalizableString s_localizableDescription = new LocalizableResourceString(nameof(RoslynDiagnosticsAnalyzersResources.ImportingConstructorShouldBeObsoleteDescription), RoslynDiagnosticsAnalyzersResources.ResourceManager, typeof(RoslynDiagnosticsAnalyzersResources));
 
-        internal static DiagnosticDescriptor Rule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor Rule = new(
             RoslynDiagnosticIds.ImportingConstructorShouldBeObsoleteRuleId,
             s_localizableTitle,
             s_localizableMessage,
@@ -116,7 +116,7 @@ namespace Roslyn.Diagnostics.Analyzers
                     foundObsoleteAttribute = true;
                     if (attributeData.ConstructorArguments.Length != 2)
                     {
-                        if (attributeData.ConstructorArguments.Length == 0)
+                        if (attributeData.ConstructorArguments.IsEmpty)
                         {
                             // '{0}' is MEF-exported and should have a single importing constructor of the correct form
                             context.ReportDiagnostic(Diagnostic.Create(Rule, attributeData.ApplicationSyntaxReference.GetSyntax().GetLocation(), ScenarioProperties.MissingDescription, namedType.Name));

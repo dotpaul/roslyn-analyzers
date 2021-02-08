@@ -62,14 +62,14 @@ namespace Microsoft.NetCore.Analyzers.Security
         /// <summary>
         /// For PropertySetAnalysis dataflow analysis; new instances always start out as flagged.
         /// </summary>
-        private static readonly ConstructorMapper ConstructorMapper = new ConstructorMapper(ImmutableArray.Create(PropertySetAbstractValueKind.Flagged));
+        private static readonly ConstructorMapper ConstructorMapper = new(ImmutableArray.Create(PropertySetAbstractValueKind.Flagged));
 
         public sealed override void Initialize(AnalysisContext context)
         {
             ImmutableHashSet<string> cachedDeserializationMethodNames = this.DeserializationMethodNames;
 
-            Debug.Assert(!String.IsNullOrWhiteSpace(this.DeserializerTypeMetadataName));
-            Debug.Assert(!String.IsNullOrWhiteSpace(this.SerializationBinderPropertyMetadataName));
+            Debug.Assert(!string.IsNullOrWhiteSpace(this.DeserializerTypeMetadataName));
+            Debug.Assert(!string.IsNullOrWhiteSpace(this.SerializationBinderPropertyMetadataName));
             Debug.Assert(!cachedDeserializationMethodNames.IsEmpty);
             Debug.Assert(this.BinderDefinitelyNotSetDescriptor != null);
             Debug.Assert(this.BinderMaybeNotSetDescriptor != null);
@@ -230,8 +230,8 @@ namespace Microsoft.NetCore.Analyzers.Security
                             }
                             finally
                             {
-                                rootOperationsNeedingAnalysis.Free();
-                                allResults?.Free();
+                                rootOperationsNeedingAnalysis.Free(compilationAnalysisContext.CancellationToken);
+                                allResults?.Free(compilationAnalysisContext.CancellationToken);
                             }
                         });
                 });

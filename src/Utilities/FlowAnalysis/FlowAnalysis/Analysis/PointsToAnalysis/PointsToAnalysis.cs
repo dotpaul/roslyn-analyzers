@@ -28,6 +28,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
             ISymbol owningSymbol,
             AnalyzerOptions analyzerOptions,
             WellKnownTypeProvider wellKnownTypeProvider,
+            PointsToAnalysisKind pointsToAnalysisKind,
             InterproceduralAnalysisConfiguration interproceduralAnalysisConfig,
             InterproceduralAnalysisPredicate? interproceduralAnalysisPredicateOpt,
             bool pessimisticAnalysis = true,
@@ -35,7 +36,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
             bool exceptionPathsAnalysis = false)
         {
             return TryGetOrComputeResult(cfg, owningSymbol, analyzerOptions, wellKnownTypeProvider,
-                out var _, interproceduralAnalysisConfig, interproceduralAnalysisPredicateOpt,
+                pointsToAnalysisKind, out _, interproceduralAnalysisConfig, interproceduralAnalysisPredicateOpt,
                 pessimisticAnalysis, performCopyAnalysis, exceptionPathsAnalysis);
         }
 
@@ -44,6 +45,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
             ISymbol owningSymbol,
             AnalyzerOptions analyzerOptions,
             WellKnownTypeProvider wellKnownTypeProvider,
+            PointsToAnalysisKind pointsToAnalysisKind,
             out CopyAnalysisResult? copyAnalysisResultOpt,
             InterproceduralAnalysisConfiguration interproceduralAnalysisConfig,
             InterproceduralAnalysisPredicate? interproceduralAnalysisPredicateOpt,
@@ -51,9 +53,15 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
             bool performCopyAnalysis = false,
             bool exceptionPathsAnalysis = false)
         {
+            if (pointsToAnalysisKind == PointsToAnalysisKind.None)
+            {
+                copyAnalysisResultOpt = null;
+                return null;
+            }
+
             copyAnalysisResultOpt = performCopyAnalysis ?
                 CopyAnalysis.CopyAnalysis.TryGetOrComputeResult(cfg, owningSymbol, analyzerOptions, wellKnownTypeProvider, interproceduralAnalysisConfig,
-                    interproceduralAnalysisPredicateOpt, pessimisticAnalysis, performPointsToAnalysis: true, exceptionPathsAnalysis) :
+                    interproceduralAnalysisPredicateOpt, pessimisticAnalysis, pointsToAnalysisKind, exceptionPathsAnalysis) :
                 null;
 
             if (cfg == null)
@@ -73,8 +81,8 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
             try
             {
                 analysisContext = PointsToAnalysisContext.Create(PointsToAbstractValueDomain.Default, wellKnownTypeProvider, cfg,
-                  owningSymbol, analyzerOptions, interproceduralAnalysisConfig, pessimisticAnalysis, exceptionPathsAnalysis, copyAnalysisResultOpt,
-                  TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
+                    owningSymbol, analyzerOptions, pointsToAnalysisKind, interproceduralAnalysisConfig, pessimisticAnalysis, exceptionPathsAnalysis, copyAnalysisResultOpt,
+                    TryGetOrComputeResultForAnalysisContext, interproceduralAnalysisPredicateOpt);
                 return TryGetOrComputeResultForAnalysisContext(analysisContext);
             }
             finally
@@ -88,7 +96,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
 
         private static PointsToAnalysisResult? TryGetOrComputeResultForAnalysisContext(PointsToAnalysisContext analysisContext)
         {
-            using var trackedEntitiesBuilder = new TrackedEntitiesBuilder();
+            using var trackedEntitiesBuilder = new TrackedEntitiesBuilder(analysisContext.PointsToAnalysisKind);
             var defaultPointsToValueGenerator = new DefaultPointsToValueGenerator(trackedEntitiesBuilder);
             var analysisDomain = new PointsToAnalysisDomain(defaultPointsToValueGenerator);
             var operationVisitor = new PointsToDataFlowOperationVisitor(trackedEntitiesBuilder, defaultPointsToValueGenerator, analysisDomain, analysisContext);
@@ -99,8 +107,19 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
         internal static bool ShouldBeTracked(ITypeSymbol typeSymbol) => typeSymbol.IsReferenceTypeOrNullableValueType() ||
             typeSymbol is ITypeParameterSymbol typeParameter && !typeParameter.IsValueType;
 
-        internal static bool ShouldBeTracked(AnalysisEntity analysisEntity)
-            => ShouldBeTracked(analysisEntity.Type) || analysisEntity.IsLValueFlowCaptureEntity || analysisEntity.IsThisOrMeInstance;
+        internal static bool ShouldBeTracked(AnalysisEntity analysisEntity, PointsToAnalysisKind pointsToAnalysisKind)
+        {
+            Debug.Assert(pointsToAnalysisKind != PointsToAnalysisKind.None);
+
+            if (!ShouldBeTracked(analysisEntity.Type) &&
+                !analysisEntity.IsLValueFlowCaptureEntity &&
+                !analysisEntity.IsThisOrMeInstance)
+            {
+                return false;
+            }
+
+            return pointsToAnalysisKind == PointsToAnalysisKind.Complete || !analysisEntity.IsChildOrInstanceMemberNeedingCompletePointsToAnalysis();
+        }
 
         [Conditional("DEBUG")]
         internal static void AssertValidPointsToAnalysisData(PointsToAnalysisData data)
@@ -110,7 +129,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
 
         protected override PointsToAnalysisResult ToResult(PointsToAnalysisContext analysisContext, DataFlowAnalysisResult<PointsToBlockAnalysisResult, PointsToAbstractValue> dataFlowAnalysisResult)
         {
-            var operationVisitor = ((PointsToDataFlowOperationVisitor)OperationVisitor);
+            var operationVisitor = (PointsToDataFlowOperationVisitor)OperationVisitor;
             return new PointsToAnalysisResult(
                 dataFlowAnalysisResult,
                 operationVisitor.GetEscapedLocationsThroughOperationsMap(),
@@ -119,6 +138,6 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis
                 operationVisitor.TrackedEntitiesBuilder);
         }
         protected override PointsToBlockAnalysisResult ToBlockResult(BasicBlock basicBlock, PointsToAnalysisData blockAnalysisData)
-            => new PointsToBlockAnalysisResult(basicBlock, blockAnalysisData);
+            => new(basicBlock, blockAnalysisData);
     }
 }

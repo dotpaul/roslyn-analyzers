@@ -70,7 +70,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
                 return;
             }
 
-            if (creation.Arguments.Length == 0)
+            if (creation.Arguments.IsEmpty)
             {
                 if (HasMessageOrParameterNameConstructor(creation.Type))
                 {
@@ -143,7 +143,7 @@ namespace Microsoft.NetCore.Analyzers.Runtime
 
         private static bool IsParameterName(IParameterSymbol parameter)
         {
-            return parameter.Name == "paramName" || parameter.Name == "parameterName";
+            return parameter.Name is "paramName" or "parameterName";
         }
 
         private static bool HasMessageOrParameterNameConstructor(ITypeSymbol type)

@@ -279,8 +279,8 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ParameterValidationAnalys
                         MarkValidatedLocations(arguments[0]);
                     }
                 }
-                else if (targetMethod.Parameters.Length > 0 &&
-                         arguments.Length > 0 &&
+                else if (!targetMethod.Parameters.IsEmpty &&
+                         !arguments.IsEmpty &&
                          ExceptionNamedType != null &&
                          targetMethod.ContainingType.DerivesFrom(ExceptionNamedType))
                 {
@@ -312,7 +312,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ParameterValidationAnalys
                     Debug.Assert(!targetMethod.IsVirtual && !targetMethod.IsOverride);
 
                     var hazardousParameterUsagesInInvokedMethod = invokedMethodAnalysisResult.HazardousParameterUsages;
-                    if (hazardousParameterUsagesInInvokedMethod.Count > 0)
+                    if (!hazardousParameterUsagesInInvokedMethod.IsEmpty)
                     {
                         foreach (var argument in arguments)
                         {
@@ -349,7 +349,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ParameterValidationAnalys
 
             private void ProcessLambdaOrLocalFunctionInvocation(IMethodSymbol targetMethod, IOperation invocation)
             {
-                Debug.Assert(targetMethod.MethodKind == MethodKind.LambdaMethod || targetMethod.MethodKind == MethodKind.LocalFunction);
+                Debug.Assert(targetMethod.MethodKind is MethodKind.LambdaMethod or MethodKind.LocalFunction);
 
                 // Lambda and local function invocations can access captured variables.
                 if (_hazardousParameterUsageBuilderOpt != null &&

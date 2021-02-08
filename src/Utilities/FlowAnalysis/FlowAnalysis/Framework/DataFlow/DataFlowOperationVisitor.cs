@@ -28,7 +28,8 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         where TAnalysisResult : class, IDataFlowAnalysisResult<TAbstractAnalysisValue>
     {
 #pragma warning disable RS0030 // The symbol 'DiagnosticDescriptor.DiagnosticDescriptor.#ctor' is banned in this project: Use 'DiagnosticDescriptorHelper.Create' instead
-        private static readonly DiagnosticDescriptor s_dummyDataflowAnalysisDescriptor = new DiagnosticDescriptor(
+#pragma warning disable RS2000 // Add analyzer diagnostic IDs to analyzer release
+        private static readonly DiagnosticDescriptor s_dummyDataflowAnalysisDescriptor = new(
             id: "InterproceduralDataflow",
             title: string.Empty,
             messageFormat: string.Empty,
@@ -36,6 +37,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             customTags: WellKnownDiagnosticTagsExtensions.DataflowAndTelemetry);
+#pragma warning restore RS2000 // Add analyzer diagnostic IDs to analyzer release
 #pragma warning restore RS0030
 
         private readonly ImmutableHashSet<CaptureId> _lValueFlowCaptures;
@@ -99,8 +101,20 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         protected abstract void SetValueForParameterOnEntry(IParameterSymbol parameter, AnalysisEntity analysisEntity, ArgumentInfo<TAbstractAnalysisValue>? assignedValueOpt);
         protected abstract void EscapeValueForParameterOnExit(IParameterSymbol parameter, AnalysisEntity analysisEntity);
         protected abstract void ResetCurrentAnalysisData();
-        protected bool HasPointsToAnalysisResult => DataFlowAnalysisContext.PointsToAnalysisResultOpt != null || IsPointsToAnalysis;
-        protected virtual bool IsPointsToAnalysis => false;
+
+        /// <summary>
+        /// Indicates if we have any points to analysis data, with or without tracking for fields and properties, i.e. either
+        /// <see cref="PointsToAnalysisKind.PartialWithoutTrackingFieldsAndProperties"/> or <see cref="PointsToAnalysisKind.Complete"/>
+        /// </summary>
+        protected bool HasPointsToAnalysisResult { get; }
+
+        /// <summary>
+        /// Indicates if we have complete points to analysis data with <see cref="PointsToAnalysisKind.Complete"/>.
+        /// </summary>
+        protected bool HasCompletePointsToAnalysisResult { get; }
+
+        internal virtual bool IsPointsToAnalysis => false;
+
         internal Dictionary<ThrownExceptionInfo, TAnalysisData>? AnalysisDataForUnhandledThrowOperations { get; private set; }
         public ImmutableDictionary<IOperation, IDataFlowAnalysisResult<TAbstractAnalysisValue>> InterproceduralResultsMap => _interproceduralResultsBuilder.ToImmutable();
 
@@ -140,10 +154,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 Debug.Assert(_currentBasicBlock != null);
                 return _currentBasicBlock!;
             }
-            private set
-            {
-                _currentBasicBlock = value;
-            }
+            private set => _currentBasicBlock = value;
         }
         protected ControlFlowConditionKind FlowBranchConditionKind { get; private set; }
         protected PointsToAbstractValue ThisOrMePointsToAbstractValue { get; }
@@ -208,7 +219,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             IAsyncDisposableNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemIAsyncDisposable);
             TaskNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksTask);
             ValueTaskNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksValueTask);
-            GenericTaskNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksGenericTask);
+            GenericTaskNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingTasksTask1);
             MonitorNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingMonitor);
             InterlockedNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemThreadingInterlocked);
             SerializationInfoNamedType = WellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.SystemRuntimeSerializationSerializationInfo);
@@ -256,10 +267,16 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 interproceduralInvocationInstanceOpt = null;
             }
 
+            var pointsToAnalysisKind = analysisContext is PointsToAnalysisContext pointsToAnalysisContext
+                ? pointsToAnalysisContext.PointsToAnalysisKind
+                : analysisContext.PointsToAnalysisResultOpt?.PointsToAnalysisKind ?? PointsToAnalysisKind.None;
+            HasPointsToAnalysisResult = pointsToAnalysisKind != PointsToAnalysisKind.None;
+            HasCompletePointsToAnalysisResult = pointsToAnalysisKind == PointsToAnalysisKind.Complete;
+
             AnalysisEntityFactory = new AnalysisEntityFactory(
                 DataFlowAnalysisContext.ControlFlowGraph,
                 DataFlowAnalysisContext.WellKnownTypeProvider,
-                getPointsToAbstractValueOpt: (analysisContext.PointsToAnalysisResultOpt != null || IsPointsToAnalysis) ?
+                getPointsToAbstractValueOpt: HasPointsToAnalysisResult ?
                     GetPointsToAbstractValue :
                     (Func<IOperation, PointsToAbstractValue>?)null,
                 getIsInsideAnonymousObjectInitializer: () => IsInsideAnonymousObjectInitializer,
@@ -439,22 +456,16 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             DictionaryAnalysisData<TKey, TAbstractAnalysisValue> targetAnalysisData,
             DictionaryAnalysisData<TKey, TAbstractAnalysisValue> newAnalysisData)
         {
-            var builder = ArrayBuilder<TKey>.GetInstance(targetAnalysisData.Count);
-            try
+            using var builder = ArrayBuilder<TKey>.GetInstance(targetAnalysisData.Count);
+            builder.AddRange(targetAnalysisData.Keys);
+
+            for (int i = 0; i < builder.Count; i++)
             {
-                builder.AddRange(targetAnalysisData.Keys);
-                for (int i = 0; i < builder.Count; i++)
+                var key = builder[i];
+                if (newAnalysisData.TryGetValue(key, out var newValue))
                 {
-                    var key = builder[i];
-                    if (newAnalysisData.TryGetValue(key, out var newValue))
-                    {
-                        targetAnalysisData[key] = newValue;
-                    }
+                    targetAnalysisData[key] = newValue;
                 }
-            }
-            finally
-            {
-                builder.Free();
             }
         }
 
@@ -478,7 +489,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
             if (_lazyParameterEntities == null &&
                 OwningSymbol is IMethodSymbol method &&
-                method.Parameters.Length > 0)
+                !method.Parameters.IsEmpty)
             {
                 var builder = ImmutableDictionary.CreateBuilder<IParameterSymbol, AnalysisEntity>();
                 var argumentValuesMap = DataFlowAnalysisContext.InterproceduralAnalysisDataOpt?.ArgumentValuesMap ??
@@ -869,7 +880,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     var requiresMethods = ContractNamedType.GetMembers("Requires");
                     var assumeMethods = ContractNamedType.GetMembers("Assume");
                     var assertMethods = ContractNamedType.GetMembers("Assert");
-                    var validationMethods = requiresMethods.Concat(assumeMethods).Concat(assertMethods).OfType<IMethodSymbol>().Where(m => m.IsStatic && m.ReturnsVoid && m.Parameters.Length >= 1 && (m.Parameters[0].Type.SpecialType == SpecialType.System_Boolean));
+                    var validationMethods = requiresMethods.Concat(assumeMethods).Concat(assertMethods).OfType<IMethodSymbol>().Where(m => m.IsStatic && m.ReturnsVoid && !m.Parameters.IsEmpty && (m.Parameters[0].Type.SpecialType == SpecialType.System_Boolean));
                     _lazyContractCheckMethodsForPredicateAnalysis = ImmutableHashSet.CreateRange(validationMethods);
                 }
 
@@ -1210,7 +1221,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             return false;
 
             // We are currently bailing out if an interface or type parameter is involved.
-            static bool IsInterfaceOrTypeParameter(ITypeSymbol? type) => type?.TypeKind == TypeKind.Interface || type?.TypeKind == TypeKind.TypeParameter;
+            static bool IsInterfaceOrTypeParameter(ITypeSymbol? type) => type?.TypeKind is TypeKind.Interface or TypeKind.TypeParameter;
         }
 
         #endregion
@@ -1250,13 +1261,13 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         private void PerformPredicateAnalysis(IOperation operation)
         {
             Debug.Assert(PredicateAnalysis);
-            Debug.Assert(operation.Kind == OperationKind.BinaryOperator ||
-                operation.Kind == OperationKind.UnaryOperator ||
-                operation.Kind == OperationKind.IsNull ||
-                operation.Kind == OperationKind.Invocation ||
-                operation.Kind == OperationKind.Argument ||
-                operation.Kind == OperationKind.FlowCaptureReference ||
-                operation.Kind == OperationKind.IsPattern);
+            Debug.Assert(operation.Kind is OperationKind.BinaryOperator or
+                OperationKind.UnaryOperator or
+                OperationKind.IsNull or
+                OperationKind.Invocation or
+                OperationKind.Argument or
+                OperationKind.FlowCaptureReference or
+                OperationKind.IsPattern);
 
             if (FlowBranchConditionKind == ControlFlowConditionKind.None || !IsRootOfCondition())
             {
@@ -1475,7 +1486,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                     PerformPredicateAnalysisCore(parenthesizedOperation.Operand, targetAnalysisData);
                     return;
 
-                case IFlowCaptureReferenceOperation _:
+                case IFlowCaptureReferenceOperation:
                     var result = AnalysisEntityFactory.TryCreate(operation, out AnalysisEntity? flowCaptureReferenceEntity);
                     Debug.Assert(result);
                     RoslynDebug.Assert(flowCaptureReferenceEntity != null);
@@ -2288,37 +2299,30 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                         return ImmutableDictionary<ISymbol, PointsToAbstractValue>.Empty;
                     }
 
-                    var capturedVariables = cfg.OriginalOperation.GetCaptures(invokedMethod);
-                    try
+                    using var capturedVariables = cfg.OriginalOperation.GetCaptures(invokedMethod);
+                    if (capturedVariables.Count == 0)
                     {
-                        if (capturedVariables.Count == 0)
+                        return ImmutableDictionary<ISymbol, PointsToAbstractValue>.Empty;
+                    }
+                    else
+                    {
+                        var builder = ImmutableDictionary.CreateBuilder<ISymbol, PointsToAbstractValue>();
+                        foreach (var capturedVariable in capturedVariables)
                         {
-                            return ImmutableDictionary<ISymbol, PointsToAbstractValue>.Empty;
-                        }
-                        else
-                        {
-                            var builder = ImmutableDictionary.CreateBuilder<ISymbol, PointsToAbstractValue>();
-                            foreach (var capturedVariable in capturedVariables)
+                            if (capturedVariable.Kind == SymbolKind.NamedType)
                             {
-                                if (capturedVariable.Kind == SymbolKind.NamedType)
-                                {
-                                    // ThisOrMeInstance capture can be skipped here
-                                    // as we already pass down the invocation instance through "GetInvocationInstance".
-                                    continue;
-                                }
-
-                                var success = AnalysisEntityFactory.TryCreateForSymbolDeclaration(capturedVariable, out var capturedEntity);
-                                Debug.Assert(success);
-                                RoslynDebug.Assert(capturedEntity != null);
-                                builder.Add(capturedVariable, capturedEntity.InstanceLocation);
+                                // ThisOrMeInstance capture can be skipped here
+                                // as we already pass down the invocation instance through "GetInvocationInstance".
+                                continue;
                             }
 
-                            return builder.ToImmutable();
+                            var success = AnalysisEntityFactory.TryCreateForSymbolDeclaration(capturedVariable, out var capturedEntity);
+                            Debug.Assert(success);
+                            RoslynDebug.Assert(capturedEntity != null);
+                            builder.Add(capturedVariable, capturedEntity.InstanceLocation);
                         }
-                    }
-                    finally
-                    {
-                        capturedVariables.Free();
+
+                        return builder.ToImmutable();
                     }
                 }
 
@@ -2813,7 +2817,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 if (targetMethod.IsLockMethod(MonitorNamedType))
                 {
                     // "System.Threading.Monitor.Enter(object)" OR "System.Threading.Monitor.Enter(object, bool)"
-                    Debug.Assert(arguments.Length >= 1);
+                    Debug.Assert(!arguments.IsEmpty);
 
                     HandleEnterLockOperation(arguments[0].Value);
                 }
@@ -2876,8 +2880,8 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 }
                 else if (operation.Instance != null)
                 {
-                    Debug.Assert(operation.TargetMethod.MethodKind == MethodKind.LambdaMethod ||
-                        operation.TargetMethod.MethodKind == MethodKind.DelegateInvoke);
+                    Debug.Assert(operation.TargetMethod.MethodKind is MethodKind.LambdaMethod or
+                        MethodKind.DelegateInvoke);
 
                     var invocationTarget = GetPointsToAbstractValue(operation.Instance);
                     if (invocationTarget.Kind == PointsToAbstractValueKind.KnownLocations)
@@ -3144,49 +3148,42 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
 
         public override TAbstractAnalysisValue VisitTuple(ITupleOperation operation, object? argument)
         {
-            var elementValueBuilder = ArrayBuilder<TAbstractAnalysisValue>.GetInstance(operation.Elements.Length);
+            using var elementValueBuilder = ArrayBuilder<TAbstractAnalysisValue>.GetInstance(operation.Elements.Length);
 
-            try
+            foreach (var element in operation.Elements)
             {
-                foreach (var element in operation.Elements)
-                {
-                    elementValueBuilder.Add(Visit(element, argument));
-                }
+                elementValueBuilder.Add(Visit(element, argument));
+            }
 
-                // Set abstract value for tuple element/field assignment if the tuple is not target of a deconstruction assignment.
-                // For deconstruction assignment, the value would be assigned from the computed value for the right side of the assignment.
-                var deconstructionAncestorOpt = operation.GetAncestor<IDeconstructionAssignmentOperation>(OperationKind.DeconstructionAssignment);
-                if (deconstructionAncestorOpt == null ||
-                    !deconstructionAncestorOpt.Target.Descendants().Contains(operation))
+            // Set abstract value for tuple element/field assignment if the tuple is not target of a deconstruction assignment.
+            // For deconstruction assignment, the value would be assigned from the computed value for the right side of the assignment.
+            var deconstructionAncestorOpt = operation.GetAncestor<IDeconstructionAssignmentOperation>(OperationKind.DeconstructionAssignment);
+            if (deconstructionAncestorOpt == null ||
+                !deconstructionAncestorOpt.Target.Descendants().Contains(operation))
+            {
+                if (AnalysisEntityFactory.TryCreateForTupleElements(operation, out var elementEntities))
                 {
-                    if (AnalysisEntityFactory.TryCreateForTupleElements(operation, out var elementEntities))
+                    Debug.Assert(elementEntities.Length == elementValueBuilder.Count);
+                    Debug.Assert(elementEntities.Length == operation.Elements.Length);
+                    for (int i = 0; i < elementEntities.Length; i++)
                     {
-                        Debug.Assert(elementEntities.Length == elementValueBuilder.Count);
-                        Debug.Assert(elementEntities.Length == operation.Elements.Length);
-                        for (int i = 0; i < elementEntities.Length; i++)
-                        {
-                            var tupleElementEntity = elementEntities[i];
-                            var assignedValueOperation = operation.Elements[i];
-                            var assignedValue = elementValueBuilder[i];
-                            SetAbstractValueForTupleElementAssignment(tupleElementEntity, assignedValueOperation, assignedValue);
-                        }
-                    }
-                    else
-                    {
-                        // Reset data for elements.
-                        foreach (var element in operation.Elements)
-                        {
-                            SetAbstractValueForAssignment(element, operation, ValueDomain.UnknownOrMayBeValue);
-                        }
+                        var tupleElementEntity = elementEntities[i];
+                        var assignedValueOperation = operation.Elements[i];
+                        var assignedValue = elementValueBuilder[i];
+                        SetAbstractValueForTupleElementAssignment(tupleElementEntity, assignedValueOperation, assignedValue);
                     }
                 }
+                else
+                {
+                    // Reset data for elements.
+                    foreach (var element in operation.Elements)
+                    {
+                        SetAbstractValueForAssignment(element, operation, ValueDomain.UnknownOrMayBeValue);
+                    }
+                }
+            }
 
-                return GetAbstractDefaultValue(operation.Type);
-            }
-            finally
-            {
-                elementValueBuilder.Free();
-            }
+            return GetAbstractDefaultValue(operation.Type);
         }
 
         public virtual TAbstractAnalysisValue VisitUnaryOperatorCore(IUnaryOperation operation, object? argument)
@@ -3634,7 +3631,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             return builder.ToImmutableAndFree();
         }
 
-        private protected bool IsDisposable([NotNullWhen(returnValue: true)]ITypeSymbol? type)
+        private protected bool IsDisposable([NotNullWhen(returnValue: true)] ITypeSymbol? type)
             => type != null && type.IsDisposable(IDisposableNamedType, IAsyncDisposableNamedType);
 
         private protected DisposeMethodKind GetDisposeMethodKind(IMethodSymbol method)

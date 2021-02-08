@@ -292,7 +292,7 @@ Option Name: `max_interprocedural_lambda_or_local_function_call_chain`
 
 Option Values: Unsigned integer
 
-Default Value: 10
+Default Value: 3
 
 Example: `dotnet_code_quality.max_interprocedural_lambda_or_local_function_call_chain = 5`
 
@@ -374,6 +374,23 @@ class Test
     }
 }
 ```
+
+#### Points to analysis kind for DFA rules based on PointsToAnalysis
+Option Name: `points_to_analysis_kind`
+
+Configurable Rules: All DFA rules
+
+Option Values:
+
+| Option Value | Summary |
+| --- | --- |
+| `None` | PointsToAnalysis is disabled. |
+| `PartialWithoutTrackingFieldsAndProperties` | Partial analysis that does not track PointsToData for fields and properties for improved performance. |
+| `Complete` | Complete analysis that also tracks PointsToData for fields and properties. |
+
+Default Value: Depends on each rule.
+
+Example: `dotnet_code_quality.points_to_analysis_kind = Complete`
 
 #### Configure execution of Copy analysis (tracks value and reference copies)
 Option Name: `copy_analysis`

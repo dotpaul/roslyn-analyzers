@@ -29,7 +29,7 @@ namespace Analyzer.Utilities
                 "System.Resources.IResourceReader",
             };
         private static readonly BoundedCacheWithFactory<Compilation, DisposeAnalysisHelper> s_DisposeHelperCache =
-            new BoundedCacheWithFactory<Compilation, DisposeAnalysisHelper>();
+            new();
 
         private static readonly ImmutableHashSet<OperationKind> s_DisposableCreationKinds = ImmutableHashSet.Create(
             OperationKind.ObjectCreation,
@@ -95,7 +95,7 @@ namespace Analyzer.Utilities
 
             // Local functions
             static DisposeAnalysisHelper CreateDisposeAnalysisHelper(Compilation compilation)
-                => new DisposeAnalysisHelper(compilation);
+                => new(compilation);
         }
 
         public bool TryGetOrComputeResult(
@@ -103,6 +103,7 @@ namespace Analyzer.Utilities
             IMethodSymbol containingMethod,
             AnalyzerOptions analyzerOptions,
             DiagnosticDescriptor rule,
+            PointsToAnalysisKind defaultPointsToAnalysisKind,
             bool trackInstanceFields,
             bool trackExceptionPaths,
             CancellationToken cancellationToken,
@@ -115,12 +116,13 @@ namespace Analyzer.Utilities
             if (cfg != null && IDisposable != null)
             {
                 disposeAnalysisResult = DisposeAnalysis.TryGetOrComputeResult(cfg, containingMethod, _wellKnownTypeProvider,
-                    analyzerOptions, rule, _disposeOwnershipTransferLikelyTypes, trackInstanceFields,
+                    analyzerOptions, rule, _disposeOwnershipTransferLikelyTypes, defaultPointsToAnalysisKind, trackInstanceFields,
                     trackExceptionPaths, cancellationToken, out pointsToAnalysisResult,
                     interproceduralAnalysisPredicateOpt: interproceduralAnalysisPredicateOpt,
                     defaultDisposeOwnershipTransferAtConstructor: defaultDisposeOwnershipTransferAtConstructor);
                 if (disposeAnalysisResult != null)
                 {
+                    RoslynDebug.Assert(pointsToAnalysisResult is object);
                     return true;
                 }
             }

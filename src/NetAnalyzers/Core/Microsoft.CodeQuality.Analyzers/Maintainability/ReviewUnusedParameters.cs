@@ -34,7 +34,8 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
                                                                              RuleLevel.Disabled,    // We have an implementation in IDE.
                                                                              description: s_localizableDescription,
                                                                              isPortedFxCopRule: true,
-                                                                             isDataflowRule: false);
+                                                                             isDataflowRule: false,
+                                                                             isReportedAtCompilationEnd: true);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -83,7 +84,7 @@ namespace Microsoft.CodeQuality.Analyzers.Maintainability
                 compilationStartContext.RegisterOperationBlockStartAction(startOperationBlockContext =>
                 {
                     // We only care about methods.
-                    if (!(startOperationBlockContext.OwningSymbol is IMethodSymbol method))
+                    if (startOperationBlockContext.OwningSymbol is not IMethodSymbol method)
                     {
                         return;
                     }

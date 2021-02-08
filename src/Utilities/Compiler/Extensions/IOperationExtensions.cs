@@ -32,7 +32,7 @@ namespace Analyzer.Utilities.Extensions
                     GetReceiverType(invocation.Instance.Syntax, compilation, cancellationToken) :
                     invocation.Instance.Type as INamedTypeSymbol;
             }
-            else if (invocation.TargetMethod.IsExtensionMethod && invocation.TargetMethod.Parameters.Length > 0)
+            else if (invocation.TargetMethod.IsExtensionMethod && !invocation.TargetMethod.Parameters.IsEmpty)
             {
                 var firstArg = invocation.Arguments.FirstOrDefault();
                 if (firstArg != null)
@@ -92,7 +92,7 @@ namespace Analyzer.Utilities.Extensions
 
         public static bool HasConstantValue(this IOperation operation, long comparand)
         {
-            return operation.HasConstantValue(unchecked((ulong)(comparand)));
+            return operation.HasConstantValue(unchecked((ulong)comparand));
         }
 
         public static bool HasConstantValue(this IOperation operation, ulong comparand)
@@ -126,7 +126,7 @@ namespace Analyzer.Utilities.Extensions
 
         private static bool HasConstantValue(Optional<object> constantValue, ITypeSymbol constantValueType, ulong comparand)
         {
-            if (constantValueType.SpecialType == SpecialType.System_Double || constantValueType.SpecialType == SpecialType.System_Single)
+            if (constantValueType.SpecialType is SpecialType.System_Double or SpecialType.System_Single)
             {
                 return (double)constantValue.Value == comparand;
             }
@@ -376,21 +376,18 @@ namespace Analyzer.Utilities.Extensions
         /// <returns></returns>
         public static bool IsComparisonOperator(this IBinaryOperation binaryOperation)
         {
-            switch (binaryOperation.OperatorKind)
+            return binaryOperation.OperatorKind switch
             {
-                case BinaryOperatorKind.Equals:
-                case BinaryOperatorKind.NotEquals:
-                case BinaryOperatorKind.ObjectValueEquals:
-                case BinaryOperatorKind.ObjectValueNotEquals:
-                case BinaryOperatorKind.LessThan:
-                case BinaryOperatorKind.LessThanOrEqual:
-                case BinaryOperatorKind.GreaterThan:
-                case BinaryOperatorKind.GreaterThanOrEqual:
-                    return true;
-
-                default:
-                    return false;
-            }
+                BinaryOperatorKind.Equals
+                or BinaryOperatorKind.NotEquals
+                or BinaryOperatorKind.ObjectValueEquals
+                or BinaryOperatorKind.ObjectValueNotEquals
+                or BinaryOperatorKind.LessThan
+                or BinaryOperatorKind.LessThanOrEqual
+                or BinaryOperatorKind.GreaterThan
+                or BinaryOperatorKind.GreaterThanOrEqual => true,
+                _ => false,
+            };
         }
 
         public static bool IsLambdaOrLocalFunctionOrDelegateInvocation(this IInvocationOperation operation)
@@ -415,7 +412,7 @@ namespace Analyzer.Utilities.Extensions
         /// </summary>
         /// <remarks>Also see <see cref="IMethodSymbolExtensions.s_methodToTopmostOperationBlockCache"/></remarks>
         private static readonly BoundedCache<Compilation, ConcurrentDictionary<IOperation, ControlFlowGraph?>> s_operationToCfgCache
-            = new BoundedCache<Compilation, ConcurrentDictionary<IOperation, ControlFlowGraph?>>();
+            = new();
 
         public static bool TryGetEnclosingControlFlowGraph(this IOperation operation, [NotNullWhen(returnValue: true)] out ControlFlowGraph? cfg)
         {
@@ -459,7 +456,7 @@ namespace Analyzer.Utilities.Extensions
                     // Attribute blocks have OperationKind.None, but ControlFlowGraph.Create does not
                     // have an overload for such operation roots.
                     // Gracefully return null for this case and fire an assert for any other OperationKind.
-                    Debug.Assert(operation.Kind == OperationKind.None, $"Unexpected root operation kind: {operation.Kind.ToString()}");
+                    Debug.Assert(operation.Kind == OperationKind.None, $"Unexpected root operation kind: {operation.Kind}");
                     return null;
             }
         }
@@ -477,43 +474,36 @@ namespace Analyzer.Utilities.Extensions
             lambdaOrLocalFunction = lambdaOrLocalFunction.OriginalDefinition;
 
             var builder = PooledHashSet<ISymbol>.GetInstance();
-            var nestedLambdasAndLocalFunctions = PooledHashSet<IMethodSymbol>.GetInstance();
+            using var nestedLambdasAndLocalFunctions = PooledHashSet<IMethodSymbol>.GetInstance();
             nestedLambdasAndLocalFunctions.Add(lambdaOrLocalFunction);
 
-            try
+            foreach (var child in operation.Descendants())
             {
-                foreach (var child in operation.Descendants())
+                switch (child.Kind)
                 {
-                    switch (child.Kind)
-                    {
-                        case OperationKind.LocalReference:
-                            ProcessLocalOrParameter(((ILocalReferenceOperation)child).Local);
-                            break;
+                    case OperationKind.LocalReference:
+                        ProcessLocalOrParameter(((ILocalReferenceOperation)child).Local);
+                        break;
 
-                        case OperationKind.ParameterReference:
-                            ProcessLocalOrParameter(((IParameterReferenceOperation)child).Parameter);
-                            break;
+                    case OperationKind.ParameterReference:
+                        ProcessLocalOrParameter(((IParameterReferenceOperation)child).Parameter);
+                        break;
 
-                        case OperationKind.InstanceReference:
-                            builder.Add(lambdaOrLocalFunction.ContainingType);
-                            break;
+                    case OperationKind.InstanceReference:
+                        builder.Add(lambdaOrLocalFunction.ContainingType);
+                        break;
 
-                        case OperationKind.AnonymousFunction:
-                            nestedLambdasAndLocalFunctions.Add(((IAnonymousFunctionOperation)child).Symbol);
-                            break;
+                    case OperationKind.AnonymousFunction:
+                        nestedLambdasAndLocalFunctions.Add(((IAnonymousFunctionOperation)child).Symbol);
+                        break;
 
-                        case OperationKind.LocalFunction:
-                            nestedLambdasAndLocalFunctions.Add(((ILocalFunctionOperation)child).Symbol);
-                            break;
-                    }
+                    case OperationKind.LocalFunction:
+                        nestedLambdasAndLocalFunctions.Add(((ILocalFunctionOperation)child).Symbol);
+                        break;
                 }
+            }
 
-                return builder;
-            }
-            finally
-            {
-                nestedLambdasAndLocalFunctions.Free();
-            }
+            return builder;
 
             // Local functions.
             void ProcessLocalOrParameter(ISymbol symbol)
@@ -689,6 +679,38 @@ namespace Analyzer.Utilities.Extensions
             }
 
             return thrownObject?.Type;
+        }
+
+        /// <summary>
+        /// Determines if the one of the invocation's arguments' values is an argument of the specified type, and if so, find
+        /// the first one.
+        /// </summary>
+        /// <param name="invocationOperation">Invocation operation whose arguments to look through.</param>
+        /// <param name="firstFoundArgument">First found IArgumentOperation.Value of the specified type, order by the method's
+        /// signature's parameters (as opposed to how arguments are specified when invoked).</param>
+        /// <returns>True if one is found, false otherwise.</returns>
+        /// <remarks>
+        /// IInvocationOperation.Arguments are ordered by how they are specified, which may differ from the order in the method
+        /// signature if the caller specifies arguments by name. This will find the first typeof operation ordered by the
+        /// method signature's parameters.
+        /// </remarks>
+        public static bool HasArgument<TOperation>(
+            this IInvocationOperation invocationOperation,
+            [NotNullWhen(returnValue: true)] out TOperation? firstFoundArgument)
+            where TOperation : class, IOperation
+        {
+            firstFoundArgument = null;
+            int minOrdinal = int.MaxValue;
+            foreach (IArgumentOperation argumentOperation in invocationOperation.Arguments)
+            {
+                if (argumentOperation.Parameter.Ordinal < minOrdinal && argumentOperation.Value is TOperation to)
+                {
+                    minOrdinal = argumentOperation.Parameter.Ordinal;
+                    firstFoundArgument = to;
+                }
+            }
+
+            return firstFoundArgument != null;
         }
     }
 }

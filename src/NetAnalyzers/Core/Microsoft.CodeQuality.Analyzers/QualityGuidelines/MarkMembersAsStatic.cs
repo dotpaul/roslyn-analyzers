@@ -32,7 +32,8 @@ namespace Microsoft.CodeQuality.Analyzers.QualityGuidelines
                                                                              RuleLevel.IdeSuggestion,
                                                                              description: s_localizableDescription,
                                                                              isPortedFxCopRule: true,
-                                                                             isDataflowRule: false);
+                                                                             isDataflowRule: false,
+                                                                             isReportedAtCompilationEnd: true);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -66,7 +67,7 @@ namespace Microsoft.CodeQuality.Analyzers.QualityGuidelines
 
                 compilationContext.RegisterOperationBlockStartAction(blockStartContext =>
                 {
-                    if (!(blockStartContext.OwningSymbol is IMethodSymbol methodSymbol) || !ShouldAnalyze(methodSymbol, blockStartContext.Compilation, skippedAttributes))
+                    if (blockStartContext.OwningSymbol is not IMethodSymbol methodSymbol || !ShouldAnalyze(methodSymbol, blockStartContext.Compilation, skippedAttributes))
                     {
                         return;
                     }

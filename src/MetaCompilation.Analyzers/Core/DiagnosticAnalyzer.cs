@@ -29,7 +29,7 @@ namespace MetaCompilation.Analyzers
         //creates a DiagnosticDescriptor with the above defaults
         public static DiagnosticDescriptor CreateRule(string id, string title, string messageFormat, string description = "")
         {
-            DiagnosticDescriptor rule = new DiagnosticDescriptor(
+            DiagnosticDescriptor rule = new(
                 id: id,
                 title: title,
                 messageFormat: messageFormat,
@@ -239,7 +239,7 @@ namespace MetaCompilation.Analyzers
         #endregion
 
         public const string GoToCodeFix = "MetaAnalyzer050";
-        internal static readonly DiagnosticDescriptor GoToCodeFixRule = new DiagnosticDescriptor(
+        internal static readonly DiagnosticDescriptor GoToCodeFixRule = new(
             id: GoToCodeFix,
             title: "Analyzer tutorial complete",
             messageFormat: s_messagePrefix + "Congratulations! You have written an analyzer! If you would like to explore a code fix for your diagnostic, open up CodeFixProvider.cs and take a look! To see your analyzer in action, press F5. A new instance of Visual Studio will open up, in which you can open a new C# console app and write test if-statements.",
@@ -339,18 +339,18 @@ namespace MetaCompilation.Analyzers
         // Performs stateful analysis
         private class CompilationAnalyzer
         {
-            private readonly List<IMethodSymbol> _analyzerMethodSymbols = new List<IMethodSymbol>();
-            private readonly List<IPropertySymbol> _analyzerPropertySymbols = new List<IPropertySymbol>();
-            private readonly List<IFieldSymbol> _analyzerFieldSymbols = new List<IFieldSymbol>();
-            private readonly List<INamedTypeSymbol> _otherAnalyzerClassSymbols = new List<INamedTypeSymbol>();
+            private readonly List<IMethodSymbol> _analyzerMethodSymbols = new();
+            private readonly List<IPropertySymbol> _analyzerPropertySymbols = new();
+            private readonly List<IFieldSymbol> _analyzerFieldSymbols = new();
+            private readonly List<INamedTypeSymbol> _otherAnalyzerClassSymbols = new();
             private IMethodSymbol _initializeSymbol;
             private IPropertySymbol _propertySymbol;
             private INamedTypeSymbol _analyzerClassSymbol;
-            private readonly Dictionary<string, string> _branchesDict = new Dictionary<string, string>();
-            private readonly List<IMethodSymbol> _codeFixMethodSymbols = new List<IMethodSymbol>();
+            private readonly Dictionary<string, string> _branchesDict = new();
+            private readonly List<IMethodSymbol> _codeFixMethodSymbols = new();
 
             //"main" method, performs the analysis once state has been collected
-            internal protected void ReportCompilationEndDiagnostics(CompilationAnalysisContext context)
+            protected internal void ReportCompilationEndDiagnostics(CompilationAnalysisContext context)
             {
                 //supported main branches for tutorial
                 _branchesDict.Add("RegisterSyntaxNodeAction", "SyntaxNode");
@@ -505,8 +505,8 @@ namespace MetaCompilation.Analyzers
             // Checks the AnalyzeIfStatement of the user's analyzer, returns a bool representing whether the check was successful or not
             private bool CheckIfStatementAnalysis(List<string> ruleNames, CompilationAnalysisContext context, IMethodSymbol analysisMethodSymbol)
             {
-                var methodDeclaration = AnalysisGetStatements(analysisMethodSymbol) as MethodDeclarationSyntax;
-                var body = methodDeclaration.Body as BlockSyntax;
+                var methodDeclaration = AnalysisGetStatements(analysisMethodSymbol);
+                var body = methodDeclaration.Body;
                 if (body == null)
                 {
                     return false;
@@ -518,7 +518,7 @@ namespace MetaCompilation.Analyzers
                     return false;
                 }
 
-                var contextParameter = methodDeclaration.ParameterList.Parameters[0] as ParameterSyntax;
+                var contextParameter = methodDeclaration.ParameterList.Parameters[0];
                 if (contextParameter == null)
                 {
                     return false;
@@ -547,7 +547,7 @@ namespace MetaCompilation.Analyzers
                         // HasTrailingTrivia if-statement in user analyzer
                         if (statementCount > 2)
                         {
-                            var triviaBlock = IfStatementAnalysis3(statements, keywordIdentifierToken) as BlockSyntax;
+                            var triviaBlock = IfStatementAnalysis3(statements, keywordIdentifierToken);
                             if (triviaBlock == null)
                             {
                                 IfDiagnostic(context, statements[2], TrailingTriviaCheckIncorrectRule, keywordIdentifierToken.Text);
@@ -964,7 +964,7 @@ namespace MetaCompilation.Analyzers
                 var booleanExpression = statement.Condition as BinaryExpressionSyntax;
                 if (booleanExpression == null)
                 {
-                    var blockResult = WhitespaceKindCheckAlternate(statement, triviaIdentifierToken) as BlockSyntax;
+                    var blockResult = WhitespaceKindCheckAlternate(statement, triviaIdentifierToken);
                     if (blockResult == null)
                     {
                         return emptyResult;
@@ -997,7 +997,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var leftArgumentList = left.ArgumentList as ArgumentListSyntax;
+                var leftArgumentList = left.ArgumentList;
                 if (leftArgumentList == null)
                 {
                     return emptyResult;
@@ -1151,7 +1151,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var leftArgumentList = left.ArgumentList as ArgumentListSyntax;
+                var leftArgumentList = left.ArgumentList;
                 if (leftArgumentList == null)
                 {
                     return emptyResult;
@@ -1631,7 +1631,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var argumentList = invocationExpression.ArgumentList as ArgumentListSyntax;
+                var argumentList = invocationExpression.ArgumentList;
                 if (argumentList == null)
                 {
                     return emptyResult;
@@ -1643,7 +1643,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var startArg = args[0] as ArgumentSyntax;
+                var startArg = args[0];
                 if (startArg == null)
                 {
                     return emptyResult;
@@ -1655,7 +1655,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var endArg = args[1] as ArgumentSyntax;
+                var endArg = args[1];
                 if (endArg == null)
                 {
                     return emptyResult;
@@ -1717,7 +1717,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var argumentList = invocationExpression.ArgumentList as ArgumentListSyntax;
+                var argumentList = invocationExpression.ArgumentList;
                 if (argumentList == null)
                 {
                     return emptyResult;
@@ -1729,7 +1729,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var treeArg = args[0] as ArgumentSyntax;
+                var treeArg = args[0];
                 if (treeArg == null)
                 {
                     return emptyResult;
@@ -1753,7 +1753,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var spanArg = args[1] as ArgumentSyntax;
+                var spanArg = args[1];
                 if (spanArg == null)
                 {
                     return emptyResult;
@@ -1815,7 +1815,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var argumentList = invocationExpression.ArgumentList as ArgumentListSyntax;
+                var argumentList = invocationExpression.ArgumentList;
                 if (argumentList == null)
                 {
                     return emptyResult;
@@ -1827,7 +1827,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var ruleArg = args[0] as ArgumentSyntax;
+                var ruleArg = args[0];
                 if (ruleArg == null)
                 {
                     return emptyResult;
@@ -1839,7 +1839,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var locationArg = args[1] as ArgumentSyntax;
+                var locationArg = args[1];
                 if (locationArg == null)
                 {
                     return emptyResult;
@@ -1887,7 +1887,7 @@ namespace MetaCompilation.Analyzers
                     return false;
                 }
 
-                var argumentList = invocationExpression.ArgumentList as ArgumentListSyntax;
+                var argumentList = invocationExpression.ArgumentList;
                 if (argumentList == null)
                 {
                     return false;
@@ -1899,7 +1899,7 @@ namespace MetaCompilation.Analyzers
                     return false;
                 }
 
-                var diagnosticArg = args[0] as ArgumentSyntax;
+                var diagnosticArg = args[0];
                 if (diagnosticArg == null)
                 {
                     return false;
@@ -1925,7 +1925,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var variableDeclaration = statement.Declaration as VariableDeclarationSyntax;
+                var variableDeclaration = statement.Declaration;
                 if (variableDeclaration == null)
                 {
                     return emptyResult;
@@ -1937,7 +1937,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var variableDeclarator = variables[0] as VariableDeclaratorSyntax;
+                var variableDeclarator = variables[0];
                 if (variableDeclarator == null)
                 {
                     return emptyResult;
@@ -1949,7 +1949,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var equalsValueClause = variableDeclarator.Initializer as EqualsValueClauseSyntax;
+                var equalsValueClause = variableDeclarator.Initializer;
                 if (equalsValueClause == null)
                 {
                     return emptyResult;
@@ -1968,7 +1968,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var variableDeclaration = statement.Declaration as VariableDeclarationSyntax;
+                var variableDeclaration = statement.Declaration;
                 if (variableDeclaration == null)
                 {
                     return emptyResult;
@@ -1980,7 +1980,7 @@ namespace MetaCompilation.Analyzers
                     return emptyResult;
                 }
 
-                var variableDeclarator = variables[0] as VariableDeclaratorSyntax;
+                var variableDeclarator = variables[0];
                 if (variableDeclarator == null)
                 {
                     return emptyResult;
@@ -2038,7 +2038,7 @@ namespace MetaCompilation.Analyzers
 
                 if (statements.Count > 2)
                 {
-                    AccessorListSyntax propertyAccessorList = propertyDeclaration.AccessorList as AccessorListSyntax;
+                    AccessorListSyntax propertyAccessorList = propertyDeclaration.AccessorList;
                     ReportDiagnostic(context, TooManyStatementsRule, propertyAccessorList.Accessors[0].Keyword.GetLocation(), "get accessor", "1 or 2", "create and return an ImmutableArray containing all DiagnosticDescriptors");
                     return false;
                 }
@@ -2074,7 +2074,7 @@ namespace MetaCompilation.Analyzers
                 if (returnExpression is InvocationExpressionSyntax)
                 {
                     var valueClause = returnExpression as InvocationExpressionSyntax;
-                    var returnDeclaration = returnStatement as ReturnStatementSyntax;
+                    var returnDeclaration = returnStatement;
                     bool suppDiagReturnCheck = SuppDiagReturnCheck(context, valueClause, returnDeclaration, ruleNames, propertyDeclaration);
                     if (!suppDiagReturnCheck)
                     {
@@ -2083,7 +2083,7 @@ namespace MetaCompilation.Analyzers
 
                     if (statements.Count > 1)
                     {
-                        AccessorListSyntax propertyAccessorList = propertyDeclaration.AccessorList as AccessorListSyntax;
+                        AccessorListSyntax propertyAccessorList = propertyDeclaration.AccessorList;
                         ReportDiagnostic(context, TooManyStatementsRule, propertyAccessorList.Accessors[0].Keyword.GetLocation(), "get accessor", "1 or 2", "create and return an ImmutableArray containing all DiagnosticDescriptors");
                         return false;
                     }
@@ -2103,8 +2103,8 @@ namespace MetaCompilation.Analyzers
                         return false;
                     }
 
-                    InvocationExpressionSyntax valueClause = symbolResult.ValueClause as InvocationExpressionSyntax;
-                    ReturnStatementSyntax returnDeclaration = symbolResult.ReturnDeclaration as ReturnStatementSyntax;
+                    InvocationExpressionSyntax valueClause = symbolResult.ValueClause;
+                    ReturnStatementSyntax returnDeclaration = symbolResult.ReturnDeclaration;
                     bool suppDiagReturnCheck = SuppDiagReturnCheck(context, valueClause, returnDeclaration, ruleNames, propertyDeclaration);
                     if (!suppDiagReturnCheck)
                     {
@@ -2177,7 +2177,7 @@ namespace MetaCompilation.Analyzers
                     return null;
                 }
 
-                var accessorBody = getAccessor.Body as BlockSyntax;
+                var accessorBody = getAccessor.Body;
                 if (accessorBody == null)
                 {
                     ReportDiagnostic(context, IncorrectAccessorReturnRule, getAccessor.Keyword.GetLocation());
@@ -2218,7 +2218,7 @@ namespace MetaCompilation.Analyzers
                     return false;
                 }
 
-                var valueArguments = valueClause.ArgumentList as ArgumentListSyntax;
+                var valueArguments = valueClause.ArgumentList;
                 if (valueArguments == null)
                 {
                     ReportDiagnostic(context, SupportedRulesRule, valueExpression.GetLocation(), propertyDeclaration.Identifier.Text);
@@ -2289,7 +2289,7 @@ namespace MetaCompilation.Analyzers
                     return result;
                 }
 
-                var equalsValueClause = variableDeclaration.Initializer as EqualsValueClauseSyntax;
+                var equalsValueClause = variableDeclaration.Initializer;
                 if (equalsValueClause == null)
                 {
                     ReportDiagnostic(context, IncorrectAccessorReturnRule, variableDeclaration.GetLocation());
@@ -2356,7 +2356,7 @@ namespace MetaCompilation.Analyzers
                             return emptyRuleNames;
                         }
 
-                        var initializer = declaratorSyntax.Initializer as EqualsValueClauseSyntax;
+                        var initializer = declaratorSyntax.Initializer;
                         if (initializer == null)
                         {
                             return emptyRuleNames;
@@ -2474,7 +2474,7 @@ namespace MetaCompilation.Analyzers
                                         return emptyRuleNames;
                                     }
 
-                                    var ruleName = fieldSymbol.Name as string;
+                                    var ruleName = fieldSymbol.Name;
                                     if (ruleName == null)
                                     {
                                         return emptyRuleNames;
@@ -2497,7 +2497,7 @@ namespace MetaCompilation.Analyzers
                                         return emptyRuleNames;
                                     }
                                 }
-                                else if (currentArgName == "title" || currentArgName == "messageFormat" || currentArgName == "category")
+                                else if (currentArgName is "title" or "messageFormat" or "category")
                                 {
                                     var argDefaults = new Dictionary<string, string>
                                     {
@@ -2711,8 +2711,8 @@ namespace MetaCompilation.Analyzers
                             return new CheckInitializeInfo();
                         }
 
-                        var invocationExpr = bodyResults.InvocationExpr as InvocationExpressionSyntax;
-                        var memberExpr = bodyResults.MemberExpr as MemberAccessExpressionSyntax;
+                        var invocationExpr = bodyResults.InvocationExpr;
+                        var memberExpr = bodyResults.MemberExpr;
                         invocExpr = invocationExpr;
 
                         if (!context.Compilation.GetSemanticModel(invocationExpr.SyntaxTree).GetSymbolInfo(memberExpr).CandidateSymbols.Any())
@@ -2783,7 +2783,7 @@ namespace MetaCompilation.Analyzers
                     return null;
                 }
 
-                var codeBlock = initializeMethod.Body as BlockSyntax;
+                var codeBlock = initializeMethod.Body;
                 if (codeBlock == null)
                 {
                     return null;
@@ -2824,7 +2824,7 @@ namespace MetaCompilation.Analyzers
                 }
 
                 MethodDeclarationSyntax methodDeclaration = statement.Parent.Parent as MethodDeclarationSyntax;
-                ParameterSyntax parameter = methodDeclaration.ParameterList.Parameters[0] as ParameterSyntax;
+                ParameterSyntax parameter = methodDeclaration.ParameterList.Parameters[0];
                 if (memberExprContext.Identifier.Text != parameter.Identifier.ValueText)
                 {
                     ReportDiagnostic(context, InvalidStatementRule, statements[0].GetLocation());
@@ -2850,7 +2850,7 @@ namespace MetaCompilation.Analyzers
 
             #region symbol collectors
             // Stores a method in state
-            internal protected void AddMethod(SymbolAnalysisContext context)
+            protected internal void AddMethod(SymbolAnalysisContext context)
             {
                 var sym = (IMethodSymbol)context.Symbol;
 
@@ -2902,7 +2902,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Stores a property in state
-            internal protected void AddProperty(SymbolAnalysisContext context)
+            protected internal void AddProperty(SymbolAnalysisContext context)
             {
                 var sym = (IPropertySymbol)context.Symbol;
 
@@ -2951,7 +2951,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Stores a field in state
-            internal protected void AddField(SymbolAnalysisContext context)
+            protected internal void AddField(SymbolAnalysisContext context)
             {
                 var sym = (IFieldSymbol)context.Symbol;
 
@@ -2984,7 +2984,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Stores a class in state
-            internal protected void AddClass(SymbolAnalysisContext context)
+            protected internal void AddClass(SymbolAnalysisContext context)
             {
                 var sym = (INamedTypeSymbol)context.Symbol;
 
@@ -3039,7 +3039,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Provides information to SuppDiagReturnSymbol method
-            internal protected class SuppDiagReturnSymbolInfo
+            protected internal class SuppDiagReturnSymbolInfo
             {
                 public InvocationExpressionSyntax ValueClause
                 {
@@ -3060,7 +3060,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Provides information to InitializeBody method
-            internal protected class InitializeBodyInfo
+            protected internal class InitializeBodyInfo
             {
                 public InvocationExpressionSyntax InvocationExpr
                 {
@@ -3081,7 +3081,7 @@ namespace MetaCompilation.Analyzers
             }
 
             // Provides information to CheckInitialize method
-            internal protected class CheckInitializeInfo
+            protected internal class CheckInitializeInfo
             {
                 public IMethodSymbol RegisterMethod
                 {

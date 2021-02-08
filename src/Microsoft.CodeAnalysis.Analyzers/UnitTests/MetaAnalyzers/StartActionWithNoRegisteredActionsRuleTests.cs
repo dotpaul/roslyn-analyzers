@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
-using Analyzer.Utilities;
 using Microsoft.CodeAnalysis.CSharp.Analyzers.MetaAnalyzers;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -518,22 +517,13 @@ End Class
 
         private static DiagnosticResult GetExpectedDiagnostic(string language, int line, int column, string parameterName, StartActionKind kind)
         {
-            string arg2;
-            switch (kind)
+            var arg2 = kind switch
             {
-                case StartActionKind.CompilationStartAction:
-                    arg2 = "Initialize";
-                    break;
-
-                case StartActionKind.CodeBlockStartAction:
-                case StartActionKind.OperationBlockStartAction:
-                    arg2 = "Initialize, CompilationStartAction";
-                    break;
-
-                default:
-                    throw new ArgumentException("Unsupported action kind", nameof(kind));
-            }
-
+                StartActionKind.CompilationStartAction => "Initialize",
+                StartActionKind.CodeBlockStartAction
+                or StartActionKind.OperationBlockStartAction => "Initialize, CompilationStartAction",
+                _ => throw new ArgumentException("Unsupported action kind", nameof(kind)),
+            };
             string message = string.Format(CodeAnalysisDiagnosticsResources.StartActionWithNoRegisteredActionsMessage, parameterName, arg2);
 
             string fileName = language == LanguageNames.CSharp ? "Test0.cs" : "Test0.vb";

@@ -33,7 +33,6 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
     public sealed class AnalysisEntity : CacheBasedEquatable<AnalysisEntity>
     {
         private readonly ImmutableArray<int> _ignoringLocationHashCodeParts;
-        private readonly int _ignoringLocationHashCode;
 
         private AnalysisEntity(
             ISymbol? symbolOpt,
@@ -59,7 +58,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             IsThisOrMeInstance = isThisOrMeInstance;
 
             _ignoringLocationHashCodeParts = ComputeIgnoringLocationHashCodeParts();
-            _ignoringLocationHashCode = HashUtilities.Combine(_ignoringLocationHashCodeParts);
+            EqualsIgnoringInstanceLocationId = HashUtilities.Combine(_ignoringLocationHashCodeParts);
         }
 
         private AnalysisEntity(ISymbol? symbolOpt, ImmutableArray<AbstractIndex> indices, PointsToAbstractValue location, ITypeSymbol type, AnalysisEntity? parentOpt)
@@ -143,7 +142,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                         SymbolOpt.Kind != SymbolKind.Local &&
                         !SymbolOpt.IsStatic;
                 }
-                else if (Indices.Length > 0)
+                else if (!Indices.IsEmpty)
                 {
                     result = true;
                 }
@@ -157,20 +156,27 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             }
         }
 
-        public bool HasConstantValue
+        internal bool IsChildOrInstanceMemberNeedingCompletePointsToAnalysis()
         {
-            get
+            if (!IsChildOrInstanceMember)
             {
-                return SymbolOpt switch
-                {
-                    IFieldSymbol field => field.HasConstantValue,
-
-                    ILocalSymbol local => local.HasConstantValue,
-
-                    _ => false,
-                };
+                return false;
             }
+
+            // PERF: This is the core performance optimization for partial PointsToAnalysisKind.
+            // We avoid tracking PointsToValues for all entities that are child or instance members,
+            // except when they are fields or members of a value type (for example, tuple elements or struct members).
+            return ParentOpt == null || !ParentOpt.Type.HasValueCopySemantics();
         }
+
+        public bool HasConstantValue => SymbolOpt switch
+        {
+            IFieldSymbol field => field.HasConstantValue,
+
+            ILocalSymbol local => local.HasConstantValue,
+
+            _ => false,
+        };
 
         public ISymbol? SymbolOpt { get; }
         public ImmutableArray<AbstractIndex> Indices { get; }
@@ -181,22 +187,13 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
         public AnalysisEntity? ParentOpt { get; }
         public bool IsThisOrMeInstance { get; }
 
-        public bool HasUnknownInstanceLocation
+        public bool HasUnknownInstanceLocation => InstanceLocation.Kind switch
         {
-            get
-            {
-                switch (InstanceLocation.Kind)
-                {
-                    case PointsToAbstractValueKind.Unknown:
-                    case PointsToAbstractValueKind.UnknownNull:
-                    case PointsToAbstractValueKind.UnknownNotNull:
-                        return true;
-
-                    default:
-                        return false;
-                }
-            }
-        }
+            PointsToAbstractValueKind.Unknown
+            or PointsToAbstractValueKind.UnknownNull
+            or PointsToAbstractValueKind.UnknownNotNull => true,
+            _ => false,
+        };
 
         public bool IsLValueFlowCaptureEntity => CaptureIdOpt.HasValue && CaptureIdOpt.Value.IsLValueFlowCapture;
 
@@ -209,7 +206,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             }
 
             if (other == null ||
-                _ignoringLocationHashCode != other._ignoringLocationHashCode)
+                EqualsIgnoringInstanceLocationId != other.EqualsIgnoringInstanceLocationId)
             {
                 return false;
             }
@@ -218,7 +215,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             return _ignoringLocationHashCodeParts.SequenceEqual(other._ignoringLocationHashCodeParts);
         }
 
-        public int EqualsIgnoringInstanceLocationId => _ignoringLocationHashCode;
+        public int EqualsIgnoringInstanceLocationId { get; private set; }
 
         protected override void ComputeHashCodeParts(Action<int> addPart)
         {

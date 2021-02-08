@@ -29,8 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
         private static readonly LocalizableString s_localizableLambaOrAnonymousMethodInGenericMethodRuleTitle = new LocalizableResourceString(nameof(AnalyzersResources.LambaOrAnonymousMethodInGenericMethodRuleTitle), AnalyzersResources.ResourceManager, typeof(AnalyzersResources));
         private static readonly LocalizableString s_localizableLambaOrAnonymousMethodInGenericMethodRuleMessage = new LocalizableResourceString(nameof(AnalyzersResources.LambaOrAnonymousMethodInGenericMethodRuleMessage), AnalyzersResources.ResourceManager, typeof(AnalyzersResources));
 
-
-        internal static DiagnosticDescriptor ClosureDriverRule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor ClosureDriverRule = new(
             ClosureDriverRuleId,
             s_localizableClosureDriverRuleTitle,
             s_localizableClosureDriverRuleMessage,
@@ -38,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
-        internal static DiagnosticDescriptor ClosureCaptureRule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor ClosureCaptureRule = new(
             ClosureCaptureRuleId,
             s_localizableClosureCaptureRuleTitle,
             s_localizableClosureCaptureRuleMessage,
@@ -46,7 +45,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
-        internal static DiagnosticDescriptor LambaOrAnonymousMethodInGenericMethodRule = new DiagnosticDescriptor(
+        internal static DiagnosticDescriptor LambaOrAnonymousMethodInGenericMethodRule = new(
             LambaOrAnonymousMethodInGenericMethodRuleId,
             s_localizableLambaOrAnonymousMethodInGenericMethodRuleTitle,
             s_localizableLambaOrAnonymousMethodInGenericMethodRuleMessage,
@@ -93,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CSharp.PerformanceSensitiveAnalyzers
         private static void ClosureCaptureDataFlowAnalysis(DataFlowAnalysis? flow, Action<Diagnostic> reportDiagnostic, Location location)
         {
             if (flow == null ||
-                flow.Captured.Length <= 0)
+                flow.Captured.IsEmpty)
             {
                 return;
             }

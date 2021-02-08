@@ -119,6 +119,12 @@ namespace Microsoft.NetFramework.Analyzers
                 internal SyntaxNode XmlDocumentDefinition { get; set; }
                 internal bool IsXmlResolverSet { get; set; }
                 internal bool IsSecureResolver { get; set; }
+
+                internal XmlDocumentEnvironment(bool isTargetFrameworkSecure)
+                {
+                    IsXmlResolverSet = false;
+                    IsSecureResolver = isTargetFrameworkSecure;
+                }
             }
 
             private class XmlTextReaderEnvironment
@@ -166,19 +172,19 @@ namespace Microsoft.NetFramework.Analyzers
             #endregion
 
             // .NET frameworks >= 4.5.2 have secure default settings
-            private static readonly Version s_minSecureFxVersion = new Version(4, 5, 2);
+            private static readonly Version s_minSecureFxVersion = new(4, 5, 2);
 
             private readonly CompilationSecurityTypes _xmlTypes;
             private readonly bool _isFrameworkSecure;
-            private readonly HashSet<IOperation> _objectCreationOperationsAnalyzed = new HashSet<IOperation>();
-            private readonly Dictionary<ISymbol, XmlDocumentEnvironment> _xmlDocumentEnvironments = new Dictionary<ISymbol, XmlDocumentEnvironment>();
-            private readonly Dictionary<ISymbol, XmlTextReaderEnvironment> _xmlTextReaderEnvironments = new Dictionary<ISymbol, XmlTextReaderEnvironment>();
-            private readonly Dictionary<ISymbol, XmlReaderSettingsEnvironment> _xmlReaderSettingsEnvironments = new Dictionary<ISymbol, XmlReaderSettingsEnvironment>();
+            private readonly HashSet<IOperation> _objectCreationOperationsAnalyzed = new();
+            private readonly Dictionary<ISymbol, XmlDocumentEnvironment> _xmlDocumentEnvironments = new();
+            private readonly Dictionary<ISymbol, XmlTextReaderEnvironment> _xmlTextReaderEnvironments = new();
+            private readonly Dictionary<ISymbol, XmlReaderSettingsEnvironment> _xmlReaderSettingsEnvironments = new();
 
             public OperationAnalyzer(CompilationSecurityTypes xmlTypes, Version targetFrameworkVersion)
             {
                 _xmlTypes = xmlTypes;
-                _isFrameworkSecure = targetFrameworkVersion == null ? false : targetFrameworkVersion >= s_minSecureFxVersion;
+                _isFrameworkSecure = targetFrameworkVersion != null && targetFrameworkVersion >= s_minSecureFxVersion;
             }
 
             public void AnalyzeOperationBlock(OperationBlockAnalysisContext context)
@@ -186,6 +192,7 @@ namespace Microsoft.NetFramework.Analyzers
                 foreach (KeyValuePair<ISymbol, XmlDocumentEnvironment> p in _xmlDocumentEnvironments)
                 {
                     XmlDocumentEnvironment env = p.Value;
+
                     if (!(env.IsXmlResolverSet | env.IsSecureResolver))
                     {
                         context.ReportDiagnostic(env.XmlDocumentDefinition.CreateDiagnostic(RuleXmlDocumentWithNoSecureResolver));
@@ -250,18 +257,10 @@ namespace Microsoft.NetFramework.Analyzers
                 }
                 else if (method.MatchMethodDerivedByName(_xmlTypes.XmlReader, SecurityMemberNames.Create))
                 {
-                    int xmlReaderSettingsIndex = SecurityDiagnosticHelpers.GetXmlReaderSettingsParameterIndex(method, _xmlTypes);
+                    int xmlReaderSettingsIndex = method.GetXmlReaderSettingsParameterIndex(_xmlTypes);
 
                     if (xmlReaderSettingsIndex < 0)
                     {
-                        if (method.Parameters.Length == 1
-                            && method.Parameters[0].RefKind == RefKind.None
-                            && method.Parameters[0].Type.SpecialType == SpecialType.System_String)
-                        {
-                            // inputUri can load be a URL.  Should further investigate if this is worth flagging.
-                            context.ReportDiagnostic(expressionSyntax.CreateDiagnostic(RuleXmlReaderCreateWrongOverload));
-                        }
-
                         // If no XmlReaderSettings are passed, then the default
                         // XmlReaderSettings are used, with DtdProcessing set to Prohibit.
                     }
@@ -292,7 +291,7 @@ namespace Microsoft.NetFramework.Analyzers
 
             private void AnalyzeObjectCreationInternal(OperationAnalysisContext context, ISymbol variable, IOperation valueOpt)
             {
-                if (!(valueOpt is IObjectCreationOperation objCreation))
+                if (valueOpt is not IObjectCreationOperation objCreation)
                 {
                     return;
                 }
@@ -306,15 +305,15 @@ namespace Microsoft.NetFramework.Analyzers
                     _objectCreationOperationsAnalyzed.Add(objCreation);
                 }
 
-                if (SecurityDiagnosticHelpers.IsXmlDocumentCtorDerived(objCreation.Constructor, _xmlTypes))
+                if (objCreation.Constructor.IsXmlDocumentCtorDerived(_xmlTypes))
                 {
                     AnalyzeObjectCreationForXmlDocument(context, variable, objCreation);
                 }
-                else if (SecurityDiagnosticHelpers.IsXmlTextReaderCtorDerived(objCreation.Constructor, _xmlTypes))
+                else if (objCreation.Constructor.IsXmlTextReaderCtorDerived(_xmlTypes))
                 {
                     AnalyzeObjectCreationForXmlTextReader(context, variable, objCreation);
                 }
-                else if (SecurityDiagnosticHelpers.IsXmlReaderSettingsCtor(objCreation.Constructor, _xmlTypes))
+                else if (objCreation.Constructor.IsXmlReaderSettingsCtor(_xmlTypes))
                 {
                     AnalyzeObjectCreationForXmlReaderSettings(variable, objCreation);
                 }
@@ -326,18 +325,19 @@ namespace Microsoft.NetFramework.Analyzers
 
             private void AnalyzeObjectCreationForXmlDocument(OperationAnalysisContext context, ISymbol variable, IObjectCreationOperation objCreation)
             {
+                // create new environment representation if does not already exist
                 if (variable == null || !_xmlDocumentEnvironments.TryGetValue(variable, out var xmlDocumentEnvironment))
                 {
-                    xmlDocumentEnvironment = new XmlDocumentEnvironment
-                    {
-                        IsSecureResolver = false,
-                        IsXmlResolverSet = false
-                    };
+                    xmlDocumentEnvironment = new XmlDocumentEnvironment(_isFrameworkSecure);
                 }
 
                 xmlDocumentEnvironment.XmlDocumentDefinition = objCreation.Syntax;
                 SyntaxNode node = objCreation.Syntax;
-                bool isXmlDocumentSecureResolver = false;
+
+                // initial XmlResolver secure value dependent on whether framework version secure
+                // < .NET 4.5.2 insecure - XmlDocument would set XmlResolver as XmlUrlResolver
+                // >= .NET 4.5.2 secure - XmlDocument would set XmlResolver as null
+                bool isXmlDocumentSecureResolver = _isFrameworkSecure;
 
                 if (!Equals(objCreation.Constructor.ContainingType, _xmlTypes.XmlDocument))
                 {
@@ -353,7 +353,7 @@ namespace Microsoft.NetFramework.Analyzers
                         if (init is IAssignmentOperation assign)
                         {
                             var propValue = assign.Value;
-                            if (!(assign.Target is IPropertyReferenceOperation propertyReference))
+                            if (assign.Target is not IPropertyReferenceOperation propertyReference)
                             {
                                 continue;
                             }
@@ -361,20 +361,23 @@ namespace Microsoft.NetFramework.Analyzers
                             var prop = propertyReference.Property;
                             if (prop.MatchPropertyDerivedByName(_xmlTypes.XmlDocument, "XmlResolver"))
                             {
-                                if (!(propValue is IConversionOperation operation))
+                                if (propValue is not IConversionOperation operation)
                                 {
                                     return;
                                 }
 
+                                // if XmlResolver declared as XmlSecureResolver by initializer
                                 if (SecurityDiagnosticHelpers.IsXmlSecureResolverType(operation.Operand.Type, _xmlTypes))
                                 {
                                     isXmlDocumentSecureResolver = true;
                                 }
+                                // if XmlResolver declared as null by initializer
                                 else if (SecurityDiagnosticHelpers.IsExpressionEqualsNull(operation.Operand))
                                 {
                                     isXmlDocumentSecureResolver = true;
                                 }
-                                else // Non secure resolvers
+                                // otherwise insecure resolver
+                                else
                                 {
                                     context.ReportDiagnostic(assign.Syntax.CreateDiagnostic(RuleXmlDocumentWithNoSecureResolver));
                                     return;
@@ -390,11 +393,13 @@ namespace Microsoft.NetFramework.Analyzers
 
                 xmlDocumentEnvironment.IsSecureResolver = isXmlDocumentSecureResolver;
 
+                // if XmlDocument object not temporary, add environment to dictionary
                 if (variable != null)
                 {
                     _xmlDocumentEnvironments[variable] = xmlDocumentEnvironment;
                 }
-                else if (!xmlDocumentEnvironment.IsSecureResolver) // Insecure temp object
+                // else is temporary (variable null) and XmlResolver insecure, then report now
+                else if (!xmlDocumentEnvironment.IsSecureResolver)
                 {
                     context.ReportDiagnostic(node.CreateDiagnostic(RuleXmlDocumentWithNoSecureResolver));
                 }
@@ -425,7 +430,7 @@ namespace Microsoft.NetFramework.Analyzers
                         if (init is IAssignmentOperation assign)
                         {
                             var propValue = assign.Value;
-                            if (!(assign.Target is IPropertyReferenceOperation propertyReference))
+                            if (assign.Target is not IPropertyReferenceOperation propertyReference)
                             {
                                 continue;
                             }
@@ -494,7 +499,7 @@ namespace Microsoft.NetFramework.Analyzers
                         if (init is IAssignmentOperation assign)
                         {
                             var propValue = assign.Value;
-                            if (!(assign.Target is IPropertyReferenceOperation propertyReference))
+                            if (assign.Target is not IPropertyReferenceOperation propertyReference)
                             {
                                 continue;
                             }
@@ -506,7 +511,7 @@ namespace Microsoft.NetFramework.Analyzers
                                 )
                             {
 
-                                if (!(propValue is IConversionOperation operation))
+                                if (propValue is not IConversionOperation operation)
                                 {
                                     return;
                                 }
@@ -599,7 +604,7 @@ namespace Microsoft.NetFramework.Analyzers
             {
                 var assignment = (IAssignmentOperation)context.Operation;
 
-                if (!(assignment.Target is IPropertyReferenceOperation propRef)) // A variable/field assignment
+                if (assignment.Target is not IPropertyReferenceOperation propRef) // A variable/field assignment
                 {
                     var symbolAssignedTo = assignment.Target.GetReferencedMemberOrLocalOrParameter();
                     if (symbolAssignedTo != null)

@@ -14,7 +14,7 @@ namespace Microsoft.NetCore.Analyzers.Security
     /// </summary>
     [SuppressMessage("Documentation", "CA1200:Avoid using cref tags with a prefix", Justification = "The comment references a type that is not referenced by this compilation.")]
     [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
-    class DoNotUseInsecureDeserializerNetDataContractSerializerMethods : DoNotUseInsecureDeserializerMethodsBase
+    internal class DoNotUseInsecureDeserializerNetDataContractSerializerMethods : DoNotUseInsecureDeserializerMethodsBase
     {
         internal static readonly DiagnosticDescriptor RealMethodUsedDescriptor =
             SecurityHelpers.CreateDiagnosticDescriptor(
@@ -24,6 +24,7 @@ namespace Microsoft.NetCore.Analyzers.Security
                 RuleLevel.Disabled,
                 isPortedFxCopRule: false,
                 isDataflowRule: false,
+                isReportedAtCompilationEnd: false,
                 descriptionResourceStringName: nameof(MicrosoftNetCoreAnalyzersResources.NetDataContractSerializerMethodUsedDescription));
 
         protected override string DeserializerTypeMetadataName =>

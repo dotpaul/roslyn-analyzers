@@ -76,12 +76,12 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                         containingMethod,
                         analyzerOptions,
                         wellKnownTypeProvider,
+                        PointsToAnalysisKind.Complete,
                         interproceduralAnalysisConfig,
                         out copyAnalysisResult,
                         out pointsToAnalysisResult,
                         pessimisticAnalysis: true,
                         performCopyAnalysis: false);
-                    if (valueContentAnalysisResult == null)
                     {
                         return null;
                     }
@@ -93,6 +93,7 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                         containingMethod,
                         analyzerOptions,
                         wellKnownTypeProvider,
+                        PointsToAnalysisKind.Complete,
                         interproceduralAnalysisConfig,
                         interproceduralAnalysisPredicateOpt: null,
                         pessimisticAnalysis: true,
@@ -101,7 +102,6 @@ namespace Analyzer.Utilities.FlowAnalysis.Analysis.TaintedDataAnalysis
                     {
                         return null;
                     }
-
                 }
 
                 analysisContext = TaintedDataAnalysisContext.Create(

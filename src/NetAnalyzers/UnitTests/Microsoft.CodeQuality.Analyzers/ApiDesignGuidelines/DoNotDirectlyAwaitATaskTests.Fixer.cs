@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using Test.Utilities;
 using Xunit;
 using VerifyCS = Test.Utilities.CSharpCodeFixVerifier<
@@ -77,8 +76,10 @@ public class C
             {
                 TestState = { Sources = { code } },
                 FixedState = { Sources = { fixedCode } },
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
                 CodeFixEquivalenceKey = MicrosoftCodeQualityAnalyzersResources.AppendConfigureAwaitTrue,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
         }
 
@@ -138,8 +139,10 @@ End Class
             {
                 TestState = { Sources = { code } },
                 FixedState = { Sources = { fixedCode } },
+#pragma warning disable CS0618 // Type or member is obsolete
                 CodeFixIndex = 1,
                 CodeFixEquivalenceKey = MicrosoftCodeQualityAnalyzersResources.AppendConfigureAwaitTrue,
+#pragma warning restore CS0618 // Type or member is obsolete
             }.RunAsync();
         }
 

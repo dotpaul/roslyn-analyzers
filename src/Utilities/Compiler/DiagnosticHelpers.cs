@@ -17,15 +17,15 @@ namespace Analyzer.Utilities
                 switch (specialType)
                 {
                     case SpecialType.System_Int16:
-                        convertedValue = unchecked((ulong)((short)value));
+                        convertedValue = unchecked((ulong)(short)value);
                         success = true;
                         break;
                     case SpecialType.System_Int32:
-                        convertedValue = unchecked((ulong)((int)value));
+                        convertedValue = unchecked((ulong)(int)value);
                         success = true;
                         break;
                     case SpecialType.System_Int64:
-                        convertedValue = unchecked((ulong)((long)value));
+                        convertedValue = unchecked((ulong)(long)value);
                         success = true;
                         break;
                     case SpecialType.System_UInt16:
@@ -45,7 +45,7 @@ namespace Analyzer.Utilities
                         success = true;
                         break;
                     case SpecialType.System_SByte:
-                        convertedValue = unchecked((ulong)((sbyte)value));
+                        convertedValue = unchecked((ulong)(sbyte)value);
                         success = true;
                         break;
                     case SpecialType.System_Char:
@@ -53,7 +53,7 @@ namespace Analyzer.Utilities
                         success = true;
                         break;
                     case SpecialType.System_Boolean:
-                        convertedValue = (ulong)((bool)value == true ? 1 : 0);
+                        convertedValue = (ulong)((bool)value ? 1 : 0);
                         success = true;
                         break;
                 }

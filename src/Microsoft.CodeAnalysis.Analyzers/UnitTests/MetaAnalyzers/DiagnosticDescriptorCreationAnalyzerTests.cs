@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using Analyzer.Utilities;
 using Microsoft.CodeAnalysis.Analyzers.MetaAnalyzers;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -900,7 +899,7 @@ CategoryWithBadId5: Prefix000-DifferentPrefix099
 
         private const string AdditionalFileName = "DiagnosticCategoryAndIdRanges.txt";
         private FileAndSource GetAdditionalFile(string source)
-            => new FileAndSource() { Source = source, FilePath = AdditionalFileName };
+            => new() { Source = source, FilePath = AdditionalFileName };
 
         #endregion
     }

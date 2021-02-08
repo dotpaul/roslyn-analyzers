@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
             if (_lazyPredicateDataMap != null)
             {
                 Debug.Assert(!_lazyPredicateDataMap.IsDisposed);
-                var builder = PooledHashSet<DictionaryAnalysisData<TKey, TValue>>.GetInstance();
+                using var builder = PooledHashSet<DictionaryAnalysisData<TKey, TValue>>.GetInstance();
                 foreach (var value in _lazyPredicateDataMap.Values)
                 {
                     if (value.TruePredicatedData != null)
@@ -77,8 +77,6 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                         Debug.Assert(builder.Add(value.FalsePredicatedData));
                     }
                 }
-
-                builder.Free();
             }
         }
 
@@ -418,7 +416,7 @@ namespace Microsoft.CodeAnalysis.FlowAnalysis.DataFlow
                 return false;
             }
 
-            return dict1.Keys.All(key => dict2.TryGetValue(key, out TValue value2) &&
+            return dict1.Keys.All(key => dict2.TryGetValue(key, out var value2) &&
                                          EqualityComparer<TValue>.Default.Equals(dict1[key], value2));
         }
 
